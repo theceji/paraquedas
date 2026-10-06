@@ -12,6 +12,11 @@
   const STOPS_WDO = [10, 11, 11.5, 12, 15, 20];
   const ACERTOS = [25, 30, 35, 45, 50, 75, 80];
   let ultimo = null;
+  let exemplo = true;
+  let desfazer = null;
+  let cenarioAnterior = '35';
+  const campos = ['cap', 'meta', 'risco', 'dd'];
+  const padrao = Object.fromEntries(campos.map(id => [id, $(id).value]));
 
   const brl = (v) => (v < 0 ? '−' : '') + 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const brl0 = (v) => (v < 0 ? '−' : '') + 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR');
@@ -29,10 +34,14 @@
     const dd = p.cap * p.ddPct / 100;
     const metaR = p.cap * p.metaPct / 100;
     let saldo = p.cap, total = 0, gains = 0, losses = 0, lancados = 0;
+    let primeiroLimite = null, totalNoLimite = 0, maiorPerda = 0, aposLimite = 0;
     const linhas = p.resultados.map((v, i) => {
       if (v === null) return { dia: i + 1, v: null, sit: '-', pctDia: null, saldo: null, pctMeta: null };
       lancados++;
       total += v; saldo += v;
+      maiorPerda = Math.max(maiorPerda, -total);
+      if (primeiroLimite !== null) aposLimite++;
+      if (primeiroLimite === null && dd > 0 && total <= -dd) { primeiroLimite = i + 1; totalNoLimite = total; }
       const sit = v > 0 ? 'Gain' : (v < 0 ? 'Loss' : '-');
       if (v > 0) gains++; else if (v < 0) losses++;
       return {
@@ -48,7 +57,8 @@
       wdo: STOPS_WDO.map((_, i) => p.stopsWdo[i]).map((pts) => { const c = contratos(risco, pts, WDO_PONTO); return { pts, c, fin: pts * WDO_PONTO * c }; }),
       linhas, total, saldo, gains, losses, lancados,
       pctMetaFinal: p.cap > 0 && p.metaPct > 0 ? (total / p.cap) / (p.metaPct / 100) : 0,
-      alerta: lancados > 0 && dd > 0 && total <= -dd
+      primeiroLimite, totalNoLimite, maiorPerda, aposLimite,
+      alerta: primeiroLimite !== null
     };
   }
   window.__gerenciamentoCalcular = calcular;
@@ -63,13 +73,17 @@
   function montarDias() {
     let h = '';
     for (let i = 0; i < DIAS; i++) {
-      h += `<tr>
+      h += `<tr id="linha${i}">
         <td>Dia ${i + 1}</td>
         <td><input type="number" id="d${i}" step="10" inputmode="decimal" aria-label="Resultado do dia ${i + 1} em reais"></td>
-        <td><span class="pill" id="s${i}">-</span></td>
-        <td class="num" id="p${i}">-</td>
-        <td class="num" id="b${i}">-</td>
-        <td class="num" id="m${i}">-</td></tr>`;
+        <td class="dia-col"><span class="pill" id="s${i}">-</span></td>
+        <td class="num dia-col" id="p${i}">-</td>
+        <td class="num dia-col" id="b${i}">-</td>
+        <td class="num dia-col" id="m${i}">-</td>
+        <td class="dia-toggle"><button type="button" class="btn" data-dia="${i}" aria-expanded="false" aria-controls="detalhe${i}" aria-label="Detalhes do dia ${i + 1}">Ver</button></td></tr>
+        <tr class="dia-extra" id="detalhe${i}" hidden><td colspan="7"><dl>
+          <dt>Situação</dt><dd id="ds${i}">—</dd><dt>% do dia</dt><dd id="dp${i}">—</dd><dt>Saldo</dt><dd id="db${i}">—</dd><dt>% da meta</dt><dd id="dm${i}">—</dd>
+        </dl></td></tr>`;
     }
     $('tDias').innerHTML = h;
   }
@@ -155,8 +169,14 @@
     $('kMeta').textContent = brl(r.metaR);
     $('kMetaPct').textContent = p.metaPct.toLocaleString('pt-BR') + '% sobre ' + brl0(p.cap);
     $('kStops').textContent = r.risco > 0 ? String(Math.floor(r.dd / r.risco + 1e-9)) : '—';
-    ultimo = { pagina: 'ger', dados: { cap: p.cap, metaPct: p.metaPct, riscoPct: p.riscoPct, ddPct: p.ddPct, risco: r.risco, dd: r.dd, metaR: r.metaR, stopsWin: p.stopsWin, stopsWdo: p.stopsWdo } };
-    if (window.PlanoCartao) window.PlanoCartao.salvar('ger', ultimo.dados);
+    const entradas = { ...Object.fromEntries(campos.map(id => [id, $(id).value])), stopsWin: p.stopsWin, stopsWdo: p.stopsWdo, exemplo };
+    ultimo = { pagina: 'ger', dados: { cap: p.cap, metaPct: p.metaPct, riscoPct: p.riscoPct, ddPct: p.ddPct, risco: r.risco, dd: r.dd, metaR: r.metaR, stopsWin: p.stopsWin, stopsWdo: p.stopsWdo, entradas, exemplo } };
+    const salvo = window.PlanoCartao && window.PlanoCartao.salvar('ger', ultimo.dados);
+    $('planoEstado').textContent = (exemplo ? 'Exemplo ilustrativo' : 'Meu plano') + (salvo ? ' · limites salvos neste navegador por 30 dias' : ' · armazenamento indisponível; mantenha a página aberta');
+    const pq = window.PlanoCartao && window.PlanoCartao.ler().pq;
+    const relacao = $('relacaoLimites');
+    relacao.className = 'hint' + (pq && (pq.orc <= 0 || r.risco > pq.stopEf) ? ' neg' : '');
+    relacao.textContent = !pq ? 'Defina o limite diário na página Paraquedas para comparar com o risco por operação.' : pq.orc <= 0 ? 'O Paraquedas está sem orçamento. Nenhuma operação cabe no plano combinado.' : r.risco > pq.stopEf ? 'Risco por operação maior que o limite diário de ' + brl(pq.stopEf) + '. Ajuste os limites antes de operar.' : r.risco > 0 ? 'Limite diário ' + brl(pq.stopEf) + ' · até ' + Math.floor(pq.stopEf / r.risco + 1e-9) + ' perdas completas por dia.' : 'Defina um risco por operação maior que zero.';
 
     let algumZero = false;
     r.win.forEach((x, i) => { const c = $('wc' + i); c.textContent = x.c; c.classList.toggle('zero', x.c === 0); $('wf' + i).textContent = brl(x.fin); if (x.c === 0) algumZero = true; });
@@ -168,9 +188,15 @@
       s.textContent = l.sit;
       s.className = 'pill' + (l.sit === 'Gain' ? ' gain' : l.sit === 'Loss' ? ' loss' : '');
       $('p' + i).textContent = l.pctDia === null ? '-' : pct(l.pctDia, 2);
-      $('p' + i).className = 'num' + (l.v > 0 ? ' pos' : l.v < 0 ? ' neg' : '');
+      $('p' + i).className = 'num dia-col' + (l.v > 0 ? ' pos' : l.v < 0 ? ' neg' : '');
       $('b' + i).textContent = l.saldo === null ? '-' : brl(l.saldo);
       $('m' + i).textContent = l.pctMeta === null ? '-' : pct(l.pctMeta, 0);
+      ['s', 'p', 'b', 'm'].forEach(prefixo => $('d' + prefixo + i).textContent = $(prefixo + i).textContent);
+      const linha = $('linha' + i);
+      linha.classList.toggle('dia-limite', r.primeiroLimite === i + 1);
+      linha.classList.toggle('dia-apos', r.primeiroLimite !== null && i + 1 > r.primeiroLimite && l.v !== null);
+      linha.title = r.primeiroLimite === i + 1 ? 'Limite de perda atingido neste dia' : r.primeiroLimite !== null && i + 1 > r.primeiroLimite && l.v !== null ? 'Lançamento após o limite: fora da regra do plano' : '';
+      if (linha.title) $('ds' + i).textContent += ' · ' + linha.title;
     });
 
     $('sSaldo').textContent = brl(r.saldo);
@@ -179,7 +205,7 @@
     sr.className = r.total > 0 ? 'pos' : r.total < 0 ? 'neg' : '';
     $('sMeta').textContent = pct(r.pctMetaFinal, 0);
     $('bMeta').style.width = Math.max(0, Math.min(1, r.pctMetaFinal)) * 100 + '%';
-    const usado = r.dd > 0 ? Math.max(0, -r.total) / r.dd : 0;
+    const usado = r.dd > 0 ? r.maiorPerda / r.dd : 0;
     $('sDD').textContent = pct(Math.min(usado, 9.99), 0);
     $('bDD').style.width = Math.min(1, usado) * 100 + '%';
     const tot = r.gains + r.losses;
@@ -187,7 +213,7 @@
     $('sGL').textContent = r.gains + ' gain · ' + r.losses + ' loss';
 
     $('alerta').hidden = !r.alerta;
-    if (r.alerta) $('alertaTxt').textContent = 'Alerta: a perda acumulada (' + brl(r.total) + ') atingiu o drawdown máximo de ' + brl(-r.dd) + '. Pare de operar e revise o plano.';
+    if (r.alerta) $('alertaTxt').textContent = 'Limite de perda atingido no dia ' + r.primeiroLimite + ' (' + brl(r.totalNoLimite) + '). O período deveria encerrar nesse dia.' + (r.aposLimite ? ' Há ' + r.aposLimite + ' lançamento(s) posterior(es), fora da regra do plano. Ganhos posteriores não apagam esse limite.' : ' Pare e revise o plano.');
 
     desenharBarras(r);
     desenharPizza(r);
@@ -221,16 +247,23 @@
     const g = nGains(acerto);
     const vals = new Array(DIAS).fill(-risco);
     for (let k = 0; k < g; k++) vals[ordem[k]] = multiplicador(k) * risco;
-    for (let i = 0; i < DIAS; i++) $('d' + i).value = Math.round(vals[i] * 100) / 100;
+    const limite = lerParametros().cap * lerParametros().ddPct / 100;
+    let total = 0, encerrou = false;
+    for (let i = 0; i < DIAS; i++) {
+      const valor = Math.round(vals[i] * 100) / 100;
+      $('d' + i).value = encerrou ? '' : valor;
+      if (!encerrou) { total += valor; if (limite > 0 && total <= -limite) encerrou = true; }
+    }
   }
 
   function atualizarCenarios() {
     const p = lerParametros();
     const risco = p.cap * p.riscoPct / 100;
     const acerto = cenarioAtivo();
+    cenarioAnterior = $('cenAcerto').value;
     const empate = 100 / (1 + payoffMedio());
     const nomePay = payoff === 'mix' ? 'gains de 2 a 3 vezes o stop' : 'gain de ' + payoff + ' para 1';
-    $('empate').textContent = 'Com ' + nomePay + ', o empate fica em ' + empate.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '% de acerto. Acima disso, o mês fica positivo.';
+    $('empate').textContent = 'Com ' + nomePay + ', o empate fica em ' + empate.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '% de acerto, antes de custos e sem aplicar o limite do período.';
     $('matriz').innerHTML = ACERTOS.map((a) => {
       const r = resultadoCenario(a, risco);
       const cls = r.total > 0 ? 'pos' : r.total < 0 ? 'neg' : 'nul';
@@ -240,6 +273,12 @@
     if (acerto === null) {
       l.className = 'licao zero';
       l.innerHTML = 'Você está usando seus próprios resultados. Escolha um cenário para comparar com o stop respeitado.';
+      return;
+    }
+    const realizado = calcular(p);
+    if (realizado.alerta) {
+      l.className = 'licao ko';
+      l.textContent = 'Cenário encerrado no dia ' + realizado.primeiroLimite + ': o limite de perda foi atingido. Resultado até a parada: ' + brl(realizado.total) + '. As operações seguintes não foram realizadas. A comparação abaixo é teórica e não aplica esse limite.';
       return;
     }
     const r = resultadoCenario(acerto, risco);
@@ -253,7 +292,15 @@
   }
 
   function aplicarCenario() { preencherCenario(); render(); atualizarCenarios(); }
+  function guardarResultados() {
+    if (cenarioAnterior !== 'livre') return;
+    const valores = Array.from({ length: DIAS }, (_, i) => $('d' + i).value);
+    if (!valores.some(v => v !== '')) return;
+    desfazer = { valores, payoff, ordem: [...ordem] };
+    $('btnDesfazer').hidden = false;
+  }
   function limpar() {
+    guardarResultados();
     for (let i = 0; i < DIAS; i++) $('d' + i).value = '';
     $('cenAcerto').value = 'livre';
     render(); atualizarCenarios();
@@ -262,24 +309,52 @@
   montarStops('tWin', STOPS_WIN, 'w', 10);
   montarStops('tWdo', STOPS_WDO, 'o', 0.5);
   montarDias();
+  function restaurar(e) {
+    campos.forEach(id => { if (e[id] !== undefined && Number.isFinite(Number(e[id])) && Number(e[id]) >= 0) $(id).value = e[id]; });
+    [['stopsWin', 'w'], ['stopsWdo', 'o']].forEach(([chave, prefixo]) => {
+      if (Array.isArray(e[chave])) e[chave].slice(0, 6).forEach((v, i) => { if (Number.isFinite(v) && v >= 0) $(prefixo + i).value = v; });
+    });
+    exemplo = e.exemplo === true;
+  }
+  const salvo = window.PlanoCartao && window.PlanoCartao.ler().ger;
+  if (salvo) restaurar(salvo.entradas || { cap: salvo.cap, meta: salvo.metaPct, risco: salvo.riscoPct, dd: salvo.ddPct, stopsWin: salvo.stopsWin, stopsWdo: salvo.stopsWdo });
+  $('btnExemplo').addEventListener('click', () => {
+    if (!exemplo && !window.confirm('Substituir os limites do seu plano pelos valores de exemplo? Os resultados próprios serão mantidos.')) return;
+    restaurar({ ...padrao, stopsWin: STOPS_WIN, stopsWdo: STOPS_WDO, exemplo: true });
+    if (cenarioAtivo() !== null) aplicarCenario(); else { render(); atualizarCenarios(); }
+  });
+  $('btnDesfazer').addEventListener('click', () => {
+    if (!desfazer) return;
+    desfazer.valores.forEach((v, i) => $('d' + i).value = v);
+    payoff = desfazer.payoff; ordem = [...desfazer.ordem]; $('cenAcerto').value = 'livre';
+    document.querySelectorAll('#payoff button').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.v === payoff)));
+    desfazer = null; $('btnDesfazer').hidden = true; render(); atualizarCenarios();
+  });
+  $('tDias').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-dia]'); if (!btn) return;
+    const aberto = btn.getAttribute('aria-expanded') !== 'true';
+    btn.setAttribute('aria-expanded', String(aberto)); btn.textContent = aberto ? 'Fechar' : 'Ver';
+    $('detalhe' + btn.dataset.dia).hidden = !aberto;
+  });
   document.addEventListener('input', (e) => {
     if (!e.target.matches('input')) return;
     if (/^d\d+$/.test(e.target.id)) { $('cenAcerto').value = 'livre'; render(); atualizarCenarios(); return; }
-    if (['cap', 'risco'].includes(e.target.id) && cenarioAtivo() !== null) { aplicarCenario(); return; }
+    exemplo = false;
+    if (['cap', 'risco', 'dd'].includes(e.target.id) && cenarioAtivo() !== null) { aplicarCenario(); return; }
     render(); atualizarCenarios();
   });
   $('formMeta').addEventListener('submit', (e) => e.preventDefault());
-  $('cenAcerto').addEventListener('change', aplicarCenario);
+  $('cenAcerto').addEventListener('change', () => { guardarResultados(); aplicarCenario(); });
   $('matriz').addEventListener('click', (e) => {
     const b = e.target.closest('.cel'); if (!b) return;
-    $('cenAcerto').value = b.dataset.a; aplicarCenario();
+    guardarResultados(); $('cenAcerto').value = b.dataset.a; aplicarCenario();
   });
   document.querySelectorAll('#payoff button').forEach((btn) => btn.addEventListener('click', () => {
     payoff = btn.dataset.v;
     document.querySelectorAll('#payoff button').forEach((b2) => b2.setAttribute('aria-pressed', b2 === btn ? 'true' : 'false'));
     if (cenarioAtivo() === null) { atualizarCenarios(); } else { aplicarCenario(); }
   }));
-  $('btnSortear').addEventListener('click', () => { sortearOrdem(); if (cenarioAtivo() === null) $('cenAcerto').value = '35'; aplicarCenario(); });
+  $('btnSortear').addEventListener('click', () => { guardarResultados(); sortearOrdem(); if (cenarioAtivo() === null) $('cenAcerto').value = '35'; aplicarCenario(); });
   $('btnLimpar').addEventListener('click', limpar);
   if (window.PlanoCartao) window.PlanoCartao.ligar('btnCartao', () => ultimo);
   sortearOrdem();

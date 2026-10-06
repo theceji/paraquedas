@@ -25,6 +25,7 @@
 <script src="assets/tema.js"></script>
 </head>
 <body class="page-wide">
+<a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 <nav class="topbar" aria-label="Principal">
   <div class="topbar-in">
     <a class="brand" href="./">
@@ -32,6 +33,7 @@
       <span>Paraquedas do Trader <em>Indisciplinado</em></span>
     </a>
     <div class="nav">
+      <button type="button" class="theme-btn" id="btnMovimento" aria-label="Reduzir movimento" aria-pressed="false" title="Reduzir movimento"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg></button>
           <button type="button" class="theme-btn" id="btnTema" aria-label="Mudar tema">
         <svg class="ico-lua" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
         <svg class="ico-sol" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
@@ -45,6 +47,7 @@
       <span class="eyebrow">Simulador de gerenciamento</span>
       <h1>Gerenciamento de <em>risco</em></h1>
       <p>Defina capital, meta e risco por operação. Veja quantos contratos operar e simule 20 dias de resultados.</p>
+      <a class="btn hero-cta" href="#t-meta">Começar meu plano ↓</a>
     </div>
     <div class="hero-art" aria-hidden="true">
       <svg viewBox="0 0 296 350">
@@ -68,17 +71,18 @@
     </div>
   </div>
   <nav class="tabs" aria-label="Ferramentas">
-    <a class="tab" href="./"><svg class="tab-ico" viewBox="0 0 420 440" aria-hidden="true"><path d="M30 190 Q210 -40 390 190 Q345 165 300 190 Q255 165 210 190 Q165 165 120 190 Q75 165 30 190 Z" fill="currentColor"/><g stroke="currentColor" stroke-width="16" fill="none"><line x1="30" y1="190" x2="165" y2="335"/><line x1="210" y1="190" x2="210" y2="335"/><line x1="390" y1="190" x2="255" y2="335"/></g><rect x="140" y="330" width="140" height="100" rx="14" fill="currentColor"/></svg><span class="tab-txt"><strong>Paraquedas</strong><small>Stop diário pelo rendimento do CDI</small></span><span class="tab-go" aria-hidden="true">Abrir<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+    <a class="tab" href="./"><svg class="tab-ico" viewBox="0 0 420 440" aria-hidden="true"><path d="M30 190 Q210 -40 390 190 Q345 165 300 190 Q255 165 210 190 Q165 165 120 190 Q75 165 30 190 Z" fill="currentColor"/><g stroke="currentColor" stroke-width="16" fill="none"><line x1="30" y1="190" x2="165" y2="335"/><line x1="210" y1="190" x2="210" y2="335"/><line x1="390" y1="190" x2="255" y2="335"/></g><rect x="140" y="330" width="140" height="100" rx="14" fill="currentColor"/></svg><span class="tab-txt"><strong>Paraquedas</strong><small>Orçamento de risco pela sua renda</small></span><span class="tab-go" aria-hidden="true">Abrir<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
     <a class="tab" href="gerenciamento.html" aria-current="page"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="tab-txt"><strong>Gerenciamento</strong><small>Meta, contratos e 20 dias de simulação</small></span></a>
   </nav>
 </header>
 
-<main class="wrap">
+<main class="wrap" id="conteudo">
 
-<section class="section" aria-labelledby="t-reg">
+<section class="section regras-intro" aria-labelledby="t-reg">
   <span class="eyebrow">1 · Antes de começar</span>
   <h2 id="t-reg">4 regras de disciplina</h2>
   <p class="lead">A disciplina é o fermento das suas finanças. Sem ela, nenhum percentual de acerto salva o mês.</p>
+  <details class="regras-details"><summary>Ver as 4 regras de disciplina</summary>
   <div class="rules-hl">
     <div class="rule-hl r-green">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>
@@ -93,7 +97,7 @@
     <div class="rule-hl r-red">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
       <strong>Alerta aceso, pare</strong>
-      <span>Drawdown atingido encerra o período. Sem exceção.</span>
+      <span>Limite de perda atingido encerra o período. Sem exceção.</span>
     </div>
     <div class="rule-hl r-amber">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
@@ -101,11 +105,13 @@
       <span>Bateu a meta? Proteja o resultado em vez de forçar entradas.</span>
     </div>
   </div>
+</details>
 </section>
 
 <section class="section" aria-labelledby="t-meta">
   <span class="eyebrow">2 · Meta, limites e contratos</span>
   <h2 id="t-meta">Quanto arriscar e quantos contratos operar</h2>
+  <div class="plano-tools"><p id="planoEstado" class="hint" role="status">Exemplo ilustrativo</p><button type="button" class="btn" id="btnExemplo">Usar exemplo</button></div>
   <div class="row3">
     <form class="panel" id="formMeta" autocomplete="off">
       <h3>Controle de meta</h3>
@@ -122,18 +128,19 @@
         <input type="number" id="risco" min="0" step="0.25" value="1" inputmode="decimal">
       </div>
       <div class="field">
-        <label for="dd">Drawdown máximo (%)</label>
+        <label for="dd">Limite de perda do período (%)</label>
         <input type="number" id="dd" min="0" step="0.5" value="5" inputmode="decimal">
-        <span class="hint">Perda acumulada em que você para de operar.</span>
+        <span class="hint">Perda acumulada sobre o capital inicial que encerra o período. Não é a queda a partir do maior saldo.</span>
       </div>
     </form>
     <div class="panel" aria-live="polite">
       <h3>Seus limites</h3>
       <div class="kpis kpis-1">
         <div class="kpi"><span>Risco por operação</span><strong class="num" id="kRisco">—</strong><small>stop financeiro de cada trade</small></div>
-        <div class="kpi"><span>Drawdown máximo</span><strong class="num neg" id="kDD">—</strong><small>perda acumulada que acende o alerta</small></div>
+        <div class="kpi"><span>Limite de perda do período</span><strong class="num neg" id="kDD">—</strong><small>perda acumulada que acende o alerta</small></div>
         <div class="kpi"><span>Meta do mês</span><strong class="num pos" id="kMeta">—</strong><small id="kMetaPct">—</small></div>
-        <div class="kpi"><span>Stops cheios até o alerta</span><strong class="num" id="kStops">—</strong><small>perdas seguidas do tamanho do risco</small></div>
+        <p class="hint" id="relacaoLimites"></p>
+        <div class="kpi"><span>Perdas completas até o limite</span><strong class="num" id="kStops">—</strong><small>perdas seguidas do tamanho do risco</small></div>
       </div>
       <div class="cartao-acao">
         <button type="button" class="btn btn-cartao" id="btnCartao">Gerar meu cartão do plano</button>
@@ -147,14 +154,14 @@
         <div>
           <div class="ativo"><span class="ativo-tag t-win">WIN</span><span><strong>Mini Índice</strong><small>R$ 0,20 por ponto</small></span></div>
           <div class="ctr-calc"><table class="compact">
-            <thead><tr><th scope="col">Stop (pts)</th><th scope="col">Contr.</th><th scope="col">Financeiro</th></tr></thead>
+            <thead><tr><th scope="col">Stop (pts)</th><th scope="col">Contr.</th><th scope="col">Perda no stop</th></tr></thead>
             <tbody id="tWin"></tbody>
           </table></div>
         </div>
         <div>
           <div class="ativo"><span class="ativo-tag t-wdo">WDO</span><span><strong>Mini Dólar</strong><small>R$ 10,00 por ponto</small></span></div>
           <div class="ctr-calc"><table class="compact">
-            <thead><tr><th scope="col">Stop (pts)</th><th scope="col">Contr.</th><th scope="col">Financeiro</th></tr></thead>
+            <thead><tr><th scope="col">Stop (pts)</th><th scope="col">Contr.</th><th scope="col">Perda no stop</th></tr></thead>
             <tbody id="tWdo"></tbody>
           </table></div>
         </div>
@@ -168,7 +175,7 @@
 <section class="section" aria-labelledby="t-dia">
   <span class="eyebrow">3 · Simulação</span>
   <h2 id="t-dia">Diário de 20 dias</h2>
-  <p class="lead">Escolha um percentual de acerto e veja o mês com stop respeitado. Ou digite seus próprios resultados (sinal de menos para perdas). Os resultados do diário não ficam salvos.</p>
+  <p class="lead">Escolha um percentual de acerto e veja o mês com stop respeitado. Ou digite seus próprios resultados (sinal de menos para perdas). Os resultados do diário não ficam salvos ao sair ou recarregar. Trocar de cenário permite desfazer a substituição enquanto esta página estiver aberta.</p>
   <div class="panel cenarios">
     <div class="cen-ctrl">
       <div class="field">
@@ -185,7 +192,7 @@
         </select>
       </div>
       <div class="field">
-        <span class="lbl" id="payLbl">Gain por stop (payoff)</span>
+        <span class="lbl" id="payLbl">Ganho para cada R$ 1 arriscado</span>
         <div class="seg" role="group" aria-labelledby="payLbl" id="payoff">
           <button type="button" data-v="2" aria-pressed="false">2 para 1</button>
           <button type="button" data-v="mix" aria-pressed="true">Misto 2 e 3</button>
@@ -195,32 +202,33 @@
       <div class="actions">
         <button type="button" class="btn" id="btnSortear">Sortear outra ordem</button>
         <button type="button" class="btn" id="btnLimpar">Limpar resultados</button>
+        <button type="button" class="btn" id="btnDesfazer" hidden>Desfazer substituição</button>
       </div>
     </div>
     <p class="licao" id="licao" aria-live="polite">—</p>
     <div class="matriz-head">
-      <span class="eyebrow">Onde a disciplina vira lucro</span>
+      <span class="eyebrow">Comparação teórica de 20 operações</span>
       <span class="foot" id="empate">—</span>
     </div>
     <div class="matriz" id="matriz"></div>
-    <p class="foot norte">Os cenários são um norte, não uma promessa. Na prática, manter gains de 2 a 3 vezes o stop é muito difícil. O que está sempre sob o seu controle é o tamanho do stop.</p>
+    <p class="foot norte">A comparação acima desconsidera o limite de perda do período; o diário encerra o cenário quando esse limite é atingido. Os resultados são hipotéticos, não uma promessa. Na prática, manter gains de 2 a 3 vezes o stop é muito difícil. O que está sempre sob o seu controle é o tamanho do stop.</p>
   </div>
   <div class="sim">
-    <div class="table-box">
+    <div class="table-box diario-box">
       <table class="compact">
-        <thead><tr><th scope="col">Dia</th><th scope="col">Resultado (R$)</th><th scope="col">Situação</th><th scope="col">% do dia</th><th scope="col">Saldo</th><th scope="col">% da meta</th></tr></thead>
+        <thead><tr><th scope="col">Dia</th><th scope="col">Resultado (R$)</th><th scope="col" class="dia-col">Situação</th><th scope="col" class="dia-col">% do dia</th><th scope="col" class="dia-col">Saldo</th><th scope="col" class="dia-col">% da meta</th><th scope="col" class="dia-toggle">Detalhes</th></tr></thead>
         <tbody id="tDias"></tbody>
       </table>
     </div>
     <div class="sim-side">
       <div class="alert" id="alerta" role="alert" hidden>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
-        <span id="alertaTxt">Alerta: drawdown atingido. Pare de operar e revise o plano.</span>
+        <span id="alertaTxt">Alerta: limite de perda atingido. Pare de operar e revise o plano.</span>
       </div>
       <div class="tiles tiles2">
         <div class="tile"><span>Saldo atual</span><strong class="num" id="sSaldo">—</strong><small id="sRes">—</small></div>
         <div class="tile"><span>Meta atingida</span><strong class="num" id="sMeta">—</strong><div class="bar" aria-hidden="true"><i id="bMeta" style="width:0%"></i></div></div>
-        <div class="tile"><span>Drawdown usado</span><strong class="num" id="sDD">—</strong><div class="bar danger" aria-hidden="true"><i id="bDD" style="width:0%"></i></div></div>
+        <div class="tile"><span>Maior uso do limite</span><strong class="num" id="sDD">—</strong><div class="bar danger" aria-hidden="true"><i id="bDD" style="width:0%"></i></div></div>
         <div class="tile"><span>Acertos</span><strong class="num" id="sAcerto">—</strong><small id="sGL">—</small></div>
       </div>
       <div class="chart-box">

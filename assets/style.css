@@ -122,7 +122,7 @@ td input[type="number"] { min-height: 40px; padding: 6px 10px; text-align: right
 /* Página Paraquedas */
 .budget-bar { display: flex; height: 64px; border-radius: 12px; overflow: hidden; background: var(--line) }
 .budget-bar div { display: flex; flex-direction: column; justify-content: center; padding: 0 12px; min-width: 0; overflow: hidden; white-space: nowrap }
-.bb-green { background: var(--green); color: #FFFFFF }
+.bb-green { background: var(--green); color: var(--on-green) }
 .bb-amber { background: var(--amber); color: #0F2235 }
 .bb-big { font-family: var(--display); font-weight: 900; font-size: 20px }
 .bb-small { font-size: 12px; font-weight: 600 }
@@ -264,16 +264,16 @@ table.compact td input[type="number"] { min-height: 36px; padding: 4px 8px; font
 .tab-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 }
 .tab-txt strong { font-family: var(--display); font-weight: 900; font-size: 22px; line-height: 1.1 }
 .tab-txt small { font-size: 14px; line-height: 1.3 }
-.tab-go { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-size: 15px; padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,0.18); white-space: nowrap }
+.tab-go { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-size: 15px; padding: 8px 12px; border-radius: 999px; background: rgba(0,0,0,0.15); white-space: nowrap }
 .tab-go svg { width: 18px; height: 18px; flex: 0 0 auto; transition: transform .18s ease }
 /* aba da página atual: mesma cor do fundo, "encaixa" no conteúdo */
 .tab[aria-current="page"] { background: var(--bg); color: var(--ink); cursor: default; padding-top: 16px }
 .tab[aria-current="page"] .tab-ico { color: var(--green) }
 .tab[aria-current="page"] small { color: var(--muted) }
 /* aba para trocar de página: verde, chamativa */
-.tab:not([aria-current]) { background: #2FA36F; color: #FFFFFF; margin-bottom: 10px; border-radius: 18px; box-shadow: 0 6px 0 #1E7A50 }
-.tab:not([aria-current]) small { color: rgba(255,255,255,0.9) }
-.tab:not([aria-current]):hover { transform: translateY(-3px); background: #33B07A }
+.tab:not([aria-current]) { background: #17784F; color: #FFFFFF; margin-bottom: 10px; border-radius: 18px; box-shadow: 0 6px 0 #1E7A50 }
+.tab:not([aria-current]) small { color: #FFFFFF }
+.tab:not([aria-current]):hover { transform: translateY(-3px); background: #126541 }
 .tab:not([aria-current]):hover .tab-go svg { transform: translateX(4px) }
 .tab:not([aria-current]):active { transform: translateY(2px); box-shadow: 0 3px 0 #1E7A50 }
 .tab:focus-visible { outline: 3px solid var(--accent-light); outline-offset: 3px }
@@ -411,10 +411,94 @@ fieldset.passo { border: 0; margin: 0; min-width: 0 }
 .saque-top strong { display: block; font-family: var(--display); font-weight: 900; font-size: 17px; line-height: 1.2 }
 .saque-top span { display: block; font-size: 14px; font-weight: 600; margin-top: 2px }
 .fonte-saque .hint { color: var(--ink) }
-.bb-amber { background: var(--red); color: #FFFFFF }
+.bb-amber { background: var(--red-soft); color: var(--ink) }
 
 /* Ajustes da operação dentro do passo 3 */
 .ajustes { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 12px; background: var(--bg) }
 .btn-link { align-self: flex-start; background: none; border: 0; padding: 4px 0; min-height: 32px; font: inherit; font-size: 14px; font-weight: 700; color: var(--green); cursor: pointer; text-decoration: underline }
 .hint.neg { color: var(--red); font-weight: 600 }
 .pq-result { position: static }
+
+/* Continuidade do plano e acesso às ferramentas */
+[id] { scroll-margin-top: 76px }
+.skip-link { position: fixed; top: -100px; left: 12px; z-index: 30; background: var(--surface); color: var(--ink); padding: 12px }
+.skip-link:focus { top: 8px }
+.hero-cta { align-self: flex-start; display: inline-flex; align-items: center; background: #17784F; color: #FFFFFF; border-color: #17784F; text-decoration: none }
+.plano-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px }
+.plano-tools .btn { flex-shrink: 0 }
+.regras-details summary { cursor: pointer; min-height: 44px; padding: 10px 0; color: var(--green); font-weight: 700 }
+.regras-details .rules-hl { margin-top: 12px }
+.regras-intro .lead { font-size: 14px }
+.semaforo.neutro { border: 1px solid var(--line) }
+#relacaoLimites { padding: 10px 0; grid-column: 1 / -1 }
+.regua-balao { left: 0 !important; transform: none }
+.regua-balao::after { display: none }
+.alert { background: var(--red-soft); color: var(--ink); border: 1px solid var(--red) }
+.dia-toggle, .dia-extra { display: none }
+.dia-limite { background: var(--red-soft) }
+.dia-apos { box-shadow: inset 4px 0 var(--red) }
+#valorSobraExato { max-width: 240px }
+:root[data-motion="reduced"] *, :root[data-motion="reduced"] *::before, :root[data-motion="reduced"] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important }
+:root[data-motion="reduced"]::view-transition-old(root), :root[data-motion="reduced"]::view-transition-new(root) { animation: none !important }
+:root[data-motion="reduced"] .drop-scene .canopy { opacity: 1; transform: none }
+:root[data-motion="reduced"] .drop-scene .drop, :root[data-motion="reduced"] .drop-scene .pile { transform: none }
+.theme-btn[aria-pressed="true"] { background: rgba(255,255,255,.18) }
+@media (max-width: 980px) {
+  .sim-side { display: contents }
+  .sim .tiles { grid-row: 1 }
+  .sim #alerta { grid-row: 2 }
+  .sim .table-box { grid-row: 3 }
+}
+@media (max-width: 640px) {
+  .hero { padding-top: 20px }
+  .hero-in { display: grid; grid-template-columns: minmax(0, 1fr) 70px; gap: 12px; height: auto; align-items: center }
+  .hero-text { min-height: 0; padding-top: 0; gap: 10px }
+  .hero h1 { font-size: clamp(27px, 6.9vw, 36px); line-height: 1.05 }
+  .hero p { font-size: 15px }
+  .hero .drop-btn svg, .hero-art svg { width: 70px }
+  .hero .drop-btn, .hero-art { min-width: 0; align-self: center }
+  .drop-hint { display: none }
+  .hero-cta { font-size: 14px; padding: 10px 12px }
+  .tabs { margin-top: 18px; align-items: stretch }
+  .tab { padding: 12px; gap: 6px; border-radius: 12px 12px 0 0; justify-content: center }
+  .tab .tab-ico, .tab-go { display: none }
+  .tab:not([aria-current]) { margin-bottom: 0; border-radius: 12px 12px 0 0; box-shadow: none }
+  .tab-txt strong { font-size: 17px; overflow-wrap: anywhere }
+  .tab-txt small { font-size: 12px }
+  .brand { font-size: 12px; gap: 6px }
+  .brand svg { width: 22px; height: 22px }
+  .topbar-in { gap: 6px }
+  .nav { gap: 0; flex-shrink: 0 }
+  .theme-btn { margin-left: 2px }
+  .regras-intro { gap: 6px !important }
+  .regras-intro h2 { font-size: 22px !important }
+  .diario-box { overflow: visible }
+  .diario-box table { table-layout: fixed }
+  .diario-box th, .diario-box td { white-space: normal; overflow-wrap: anywhere }
+  .diario-box th:first-child { width: 23% }
+  .diario-box th:nth-child(2) { width: 45% }
+  .diario-box .dia-col { display: none }
+  .diario-box .dia-toggle { display: table-cell }
+  .diario-box .dia-toggle button { padding: 8px 5px; font-size: 12px; width: 100% }
+  .diario-box td input[type="number"] { min-width: 0; max-width: none; width: 100%; min-height: 44px; font-size: 16px }
+  .dia-extra:not([hidden]) { display: table-row }
+  .dia-extra dl { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin: 8px; font-size: 14px }
+  .dia-extra dt { color: var(--muted) }
+  .dia-extra dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums }
+}
+
+/* Diário móvel com três colunas reais; detalhes não alteram sua largura. */
+@media (max-width: 640px) {
+  .section { gap: 14px }
+  .section h2 { font-size: 24px; line-height: 1.15 }
+  .lead { font-size: 15px }
+  .degraus { grid-template-columns: repeat(4, minmax(0, 1fr)) }
+  .degraus li { font-size: 12px; padding: 8px 2px }
+  .degraus li::before { content: none }
+  .diario-box table, .diario-box thead, .diario-box tbody { display: block; width: 100% }
+  .diario-box tr:not(.dia-extra) { display: grid; grid-template-columns: 60px minmax(0, 1fr) 90px; align-items: center }
+  .diario-box th:first-child, .diario-box th:nth-child(2) { width: auto }
+  .diario-box .dia-toggle { display: block }
+  .diario-box .dia-extra:not([hidden]), .diario-box .dia-extra td { display: block; width: 100% }
+  .diario-box .dia-toggle button { white-space: nowrap; font-size: 13px }
+}

@@ -16,6 +16,7 @@
   function lerTudo() {
     let d = {};
     try { d = JSON.parse(localStorage.getItem(CHAVE) || '{}') || {}; } catch (e) { d = {}; }
+    if (!d || typeof d !== 'object' || Array.isArray(d)) d = {};
     const agora = Date.now();
     let mudou = false;
     ['pq', 'ger'].forEach((k) => { if (d[k] && !(agora - (d[k].ts || 0) < VALIDADE_MS)) { delete d[k]; mudou = true; } });
@@ -27,26 +28,29 @@
       const d = lerTudo();
       d[pagina] = Object.assign({}, dados, { ts: Date.now() });
       localStorage.setItem(CHAVE, JSON.stringify(d));
-    } catch (e) { /* armazenamento bloqueado: o cartão usa só a página atual */ }
+      return true;
+    } catch (e) { return false; /* o cartão ainda usa a página atual */ }
   }
 
   /* ---------- Cálculo do conteúdo ---------- */
-  const brl = (v, dec) => (v < 0 ? '−' : '') + 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: dec || 0, maximumFractionDigits: dec || 0 });
+  const brl = (v, dec) => (v < 0 ? '−' : '') + 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: dec ?? (Number.isInteger(v) ? 0 : 2), maximumFractionDigits: dec ?? 2 });
   const ctr = (risco, pts, vp) => (risco > 0 && pts > 0 ? Math.floor(risco / (pts * vp) + 1e-9) : 0);
 
   function montarPlano(atual) {
     const d = lerTudo();
     if (atual && atual.pagina) d[atual.pagina] = Object.assign({}, atual.dados, { ts: Date.now() });
     const pq = d.pq || null, ger = d.ger || null;
-    const baseRisco = ger ? ger.risco : (pq ? pq.stopEf : 0);
-    const baseTxt = ger ? 'pelo risco por operação' : 'pelo stop diário';
+    const semOrcamento = !!pq && (!(pq.orc > 0) || !(pq.stopEf > 0));
+    const alertaRisco = !!(pq && ger && ger.risco > pq.stopEf);
+    const baseRisco = semOrcamento || alertaRisco ? 0 : ger ? ger.risco : (pq ? pq.stopEf : 0);
+    const baseTxt = semOrcamento ? 'sem orçamento disponível' : alertaRisco ? 'ajuste os limites' : ger ? 'pelo risco por operação' : 'pelo limite diário';
     const stopsWin = ger && ger.stopsWin ? ger.stopsWin : STOPS_WIN;
     const stopsWdo = ger && ger.stopsWdo ? ger.stopsWdo : STOPS_WDO;
     const stopsPorDia = pq && ger && ger.risco > 0 ? Math.floor(pq.stopEf / ger.risco + 1e-9) : null;
     const hoje = new Date();
     return {
-      pq, ger, baseRisco, baseTxt, stopsPorDia,
-      alertaRisco: pq && ger && ger.risco > pq.stopEf,
+      pq, ger, baseRisco, baseTxt, stopsPorDia, semOrcamento, alertaRisco,
+      exemplo: !!((pq && pq.exemplo) || (ger && ger.exemplo)),
       win: stopsWin.map((p) => ({ p, c: ctr(baseRisco, p, WIN_PONTO) })),
       wdo: stopsWdo.map((p) => ({ p, c: ctr(baseRisco, p, WDO_PONTO) })),
       mes: MESES[hoje.getMonth()] + ' de ' + hoje.getFullYear(),
@@ -112,7 +116,7 @@
     txt(ctx, 'Paraquedas do Trader ', M + 70, 72, '800 26px ' + F.d, '#FFFFFF');
     ctx.font = '800 26px ' + F.d; const wPt = ctx.measureText('Paraquedas do Trader ').width;
     txt(ctx, 'Indisciplinado', M + 70 + wPt, 72, '800 26px ' + F.d, C.accent);
-    txt(ctx, 'Meu plano de trade', M, 150, '900 58px ' + F.d, '#FFFFFF');
+    txt(ctx, P.exemplo ? 'Plano com exemplos' : 'Meu plano de trade', M, 150, '900 58px ' + F.d, '#FFFFFF');
     txt(ctx, P.mes, W - M, 150, '700 26px ' + F.b, '#A9C2D6', 'right');
 
     let y = 236;
@@ -131,24 +135,24 @@
     if (P.pq) {
       rr(ctx, xL, y, colW, hBox, 22, C.card);
       txt(ctx, 'MEU MÊS', xL + 28, y + 46, '800 20px ' + F.b, C.green);
-      bloco(ctx, xL + 28, y + 88, colW - 56, 'Orçamento de risco', brl(P.pq.orc), P.pq.saque > 0 ? brl(P.pq.saque) + ' retirados do patrimônio' : '100% renda nova do mês', C.green);
+      bloco(ctx, xL + 28, y + 88, colW - 56, 'Orçamento de risco', brl(P.pq.orc), P.semOrcamento ? 'Nenhuma operação disponível' : P.pq.saque > 0 ? brl(P.pq.saque) + ' retirados do patrimônio' : 'Orçamento da renda do mês', C.green);
       bloco(ctx, xL + 28, y + 196, (colW - 56) / 2 - 8, 'Stop diário', brl(P.pq.stopEf), null);
       bloco(ctx, xL + 28 + (colW - 56) / 2 + 8, y + 196, (colW - 56) / 2 - 8, 'Dias', P.pq.dias + (P.pq.dias === 1 ? ' dia' : ' dias'), null);
     } else faltando(ctx, xL, y, colW, hBox, 'Complete na página Paraquedas');
     if (P.ger) {
       rr(ctx, xR, y, colW, hBox, 22, C.card);
       txt(ctx, 'MINHA OPERAÇÃO', xR + 28, y + 46, '800 20px ' + F.b, C.blue);
-      bloco(ctx, xR + 28, y + 88, colW - 56, 'Risco por operação', brl(P.ger.risco), P.stopsPorDia === 0 ? 'maior que o stop diário!' : P.stopsPorDia !== null ? 'até ' + P.stopsPorDia + (P.stopsPorDia === 1 ? ' stop' : ' stops') + ' por dia' : P.ger.riscoPct.toLocaleString('pt-BR') + '% de ' + brl(P.ger.cap), C.ink);
+      bloco(ctx, xR + 28, y + 88, colW - 56, 'Risco por operação', brl(P.ger.risco), P.semOrcamento ? 'Sem orçamento disponível' : P.alertaRisco ? 'Excede o limite diário!' : P.stopsPorDia !== null ? 'até ' + P.stopsPorDia + (P.stopsPorDia === 1 ? ' perda' : ' perdas') + ' por dia' : P.ger.riscoPct.toLocaleString('pt-BR') + '% de ' + brl(P.ger.cap), P.alertaRisco || P.semOrcamento ? C.red : C.ink);
       bloco(ctx, xR + 28, y + 196, (colW - 56) / 2 - 8, 'Meta do mês', brl(P.ger.metaR), P.ger.metaPct.toLocaleString('pt-BR') + '%', C.green);
-      bloco(ctx, xR + 28 + (colW - 56) / 2 + 8, y + 196, (colW - 56) / 2 - 8, 'Drawdown', brl(-P.ger.dd), 'alerta: pare', C.red);
+      bloco(ctx, xR + 28 + (colW - 56) / 2 + 8, y + 196, (colW - 56) / 2 - 8, 'Limite de perda', brl(-P.ger.dd), 'alerta: pare', C.red);
     } else faltando(ctx, xR, y, colW, hBox, 'Complete na página Gerenciamento');
     y += hBox + 22;
 
     // Contratos
     const hCtr = 370;
     rr(ctx, M, y, W - 2 * M, hCtr, 22, C.card);
-    txt(ctx, 'QUANTOS CONTRATOS OPERAR', M + 28, y + 46, '800 20px ' + F.b, C.ink);
-    txt(ctx, 'Calculado ' + P.baseTxt + ': ' + brl(P.baseRisco), W - M - 28, y + 46, '600 18px ' + F.b, C.muted, 'right');
+    txt(ctx, 'CONTRATOS PELO PLANO', M + 28, y + 46, '800 20px ' + F.b, C.ink);
+    txt(ctx, (P.semOrcamento || P.alertaRisco ? '' : 'Calculado ') + P.baseTxt + ': ' + brl(P.baseRisco), W - M - 28, y + 46, '600 18px ' + F.b, C.muted, 'right');
     const tW = (W - 2 * M - 56 - 24) / 2;
     [[P.win, 'WIN', 'Mini Índice', C.blue, '#FFFFFF', M + 28], [P.wdo, 'WDO', 'Mini Dólar', C.amber, '#3A2600', M + 28 + tW + 24]].forEach(([linhas, tag, nome, corTag, corTxt, x]) => {
       const ty = y + 74;
@@ -211,7 +215,7 @@
       dica.textContent = !P.pq || !P.ger ? 'Dica: preencha também a página ' + (!P.pq ? 'Paraquedas' : 'Gerenciamento') + ' para completar o cartão.' : 'Salve no celular, use como papel de parede ou imprima e cole perto da tela.';
       alvo.append(img, a, dica);
       btn.disabled = false; btn.textContent = rotulo;
-      alvo.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      alvo.scrollIntoView({ behavior: document.documentElement.getAttribute('data-motion') === 'reduced' ? 'auto' : 'smooth', block: 'nearest' });
     }, 'image/png');
   }
 

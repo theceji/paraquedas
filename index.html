@@ -25,6 +25,7 @@
 <script src="assets/tema.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 <nav class="topbar" aria-label="Principal">
   <div class="topbar-in">
     <a class="brand" href="./">
@@ -32,6 +33,7 @@
       <span>Paraquedas do Trader <em>Indisciplinado</em></span>
     </a>
     <div class="nav">
+      <button type="button" class="theme-btn" id="btnMovimento" aria-label="Reduzir movimento" aria-pressed="false" title="Reduzir movimento"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg></button>
           <button type="button" class="theme-btn" id="btnTema" aria-label="Mudar tema">
         <svg class="ico-lua" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
         <svg class="ico-sol" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
@@ -45,6 +47,7 @@
       <span class="eyebrow">Plano de risco · Day trade</span>
       <h1>Paraquedas do Trader <em>Indisciplinado</em></h1>
       <p>Arrisque só parte da renda que entra no mês. O que já está guardado nunca entra no jogo.</p>
+      <a class="btn hero-cta" href="#t-calc">Começar meu plano ↓</a>
     </div>
     <button type="button" class="drop-btn" id="dropBtn" aria-label="Ver de novo o paraquedas pousando na pilha de dinheiro">
       <svg class="drop-scene play" id="dropScene" viewBox="0 0 296 350" role="img" aria-label="Paraquedas desce com um bloco de dinheiro e pousa sobre uma pilha de blocos">
@@ -63,17 +66,18 @@
     </button>
   </div>
   <nav class="tabs" aria-label="Ferramentas">
-    <a class="tab" href="./" aria-current="page"><svg class="tab-ico" viewBox="0 0 420 440" aria-hidden="true"><path d="M30 190 Q210 -40 390 190 Q345 165 300 190 Q255 165 210 190 Q165 165 120 190 Q75 165 30 190 Z" fill="currentColor"/><g stroke="currentColor" stroke-width="16" fill="none"><line x1="30" y1="190" x2="165" y2="335"/><line x1="210" y1="190" x2="210" y2="335"/><line x1="390" y1="190" x2="255" y2="335"/></g><rect x="140" y="330" width="140" height="100" rx="14" fill="currentColor"/></svg><span class="tab-txt"><strong>Paraquedas</strong><small>Stop diário pelo rendimento do CDI</small></span></a>
+    <a class="tab" href="./" aria-current="page"><svg class="tab-ico" viewBox="0 0 420 440" aria-hidden="true"><path d="M30 190 Q210 -40 390 190 Q345 165 300 190 Q255 165 210 190 Q165 165 120 190 Q75 165 30 190 Z" fill="currentColor"/><g stroke="currentColor" stroke-width="16" fill="none"><line x1="30" y1="190" x2="165" y2="335"/><line x1="210" y1="190" x2="210" y2="335"/><line x1="390" y1="190" x2="255" y2="335"/></g><rect x="140" y="330" width="140" height="100" rx="14" fill="currentColor"/></svg><span class="tab-txt"><strong>Paraquedas</strong><small>Orçamento de risco pela sua renda</small></span></a>
     <a class="tab" href="gerenciamento.html"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="tab-txt"><strong>Gerenciamento</strong><small>Meta, contratos e 20 dias de simulação</small></span><span class="tab-go" aria-hidden="true">Abrir<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
   </nav>
 </header>
 
-<main class="wrap">
+<main class="wrap" id="conteudo">
 
 <section class="section" aria-labelledby="t-calc">
   <span class="eyebrow">1 · Seus números</span>
   <h2 id="t-calc">Calcule o seu paraquedas</h2>
-  <p class="lead">Valores de exemplo já preenchidos. Mude qualquer campo e tudo recalcula.</p>
+  <p class="lead">Ajuste os valores à sua realidade. Seu plano é atualizado a cada alteração.</p>
+  <div class="plano-tools"><p id="planoEstado" class="hint" role="status">Exemplo ilustrativo</p><button type="button" class="btn" id="btnExemplo">Usar exemplo</button></div>
   <ol class="degraus" aria-label="Ordem de uso do dinheiro">
     <li class="dg-contas">Contas</li>
     <li class="dg-reserva">Reserva</li>
@@ -147,9 +151,12 @@
             <label for="valSobra">Parte da sobra do mês para o risco</label>
             <div class="regua" id="regua">
               <output class="regua-balao num" id="sobraBalao" for="valSobra">R$ 0 · 0%</output>
-              <input type="range" id="valSobra" min="0" max="1200" step="10" value="360" aria-describedby="reguaFim">
+              <input type="range" id="valSobra" min="0" max="1200" step="0.01" value="360" aria-describedby="reguaFim">
               <div class="regua-pontas num"><span>R$ 0</span><span id="reguaFim">R$ 1.200</span></div>
             </div>
+            <label for="valorSobraExato">Valor exato para o risco (R$)</label>
+            <input type="number" id="valorSobraExato" min="0" max="1200" step="0.01" value="360" inputmode="decimal" aria-describedby="sobraHint sobraErro">
+            <span class="hint neg" id="sobraErro" role="status" hidden></span>
             <span class="hint" id="sobraHint">É por aqui que entram salário, pró-labore e aluguel: pela sobra, depois das contas.</span>
           </div>
         </div>
@@ -180,10 +187,10 @@
         <span class="eyebrow">Ajustes da operação</span>
         <div class="fonte-grid">
           <div class="field">
-            <label for="stop">Stop diário (R$)</label>
-            <input type="number" id="stop" min="10" step="10" value="100" inputmode="numeric" form="form">
-            <span class="hint" id="stopHint">Faixa ideal: R$ 100 a R$ 200.</span>
-            <button type="button" class="btn-link" id="btnStopGer" hidden>Usar o do Gerenciamento</button>
+            <label for="stop">Limite de perda por dia (R$)</label>
+            <input type="number" id="stop" min="0.01" step="0.01" value="100" inputmode="decimal" form="form">
+            <span class="hint" id="stopHint">É o total que você aceita perder no dia, somando as operações.</span>
+            <button type="button" class="btn-link" id="btnStopGer" hidden>Usar o risco por operação como limite diário</button>
           </div>
           <div class="field">
             <label for="pts">Ibovespa futuro (pontos)</label>
@@ -192,16 +199,17 @@
           </div>
         </div>
       </div>
+      <p class="hint" id="relacaoLimites"></p>
       <div class="budget-bar" id="bbar">
-        <div class="bb-green" id="bbG"><span class="bb-big num" id="bbGv">R$ 0</span><span class="bb-small">renda do mês · com paraquedas</span></div>
+        <div class="bb-green" id="bbG"><span class="bb-big num" id="bbGv">R$ 0</span><span class="bb-small">renda do mês destinada ao risco</span></div>
         <div class="bb-amber" id="bbA"><span class="bb-big num" id="bbAv">R$ 0</span><span class="bb-small">do patrimônio · má decisão</span></div>
       </div>
       <ul class="composicao" id="composicao"></ul>
       <div class="kpis">
         <div class="kpi"><span>Orçamento do mês</span><strong class="num" id="kOrc">—</strong><small id="kProt">—</small></div>
         <div class="kpi"><span>Dias de operação</span><strong class="num pos" id="kDias">—</strong><small id="kStopEf">—</small></div>
-        <div class="kpi"><span>Stop em pontos (1 WIN)</span><strong class="num" id="kPts">—</strong><small>R$ 0,20 por ponto</small></div>
-        <div class="kpi"><span>Alavancagem</span><strong class="num" id="kAlav">—</strong><small id="kNoc">—</small></div>
+        <div class="kpi"><span>Limite diário em pontos (1 WIN)</span><strong class="num" id="kPts">—</strong><small>R$ 0,20 por ponto</small></div>
+        <div class="kpi"><span>Exposição de 1 WIN / orçamento</span><strong class="num" id="kAlav">—</strong><small id="kNoc">—</small></div>
       </div>
       <div>
         <span class="eyebrow">Pregões do mês (máx. 20)</span>
@@ -223,9 +231,9 @@
   <div class="tiles">
     <div class="tile"><span>Patrimônio antes e depois</span><strong class="num" id="pPat">—</strong></div>
     <div class="tile"><span>Renda do mês que deixou de ser guardada</span><strong class="num pos" id="pRend">—</strong></div>
-    <div class="tile"><span>Perda real (saque do patrimônio)</span><strong class="num amb" id="pComp">—</strong></div>
+    <div class="tile"><span>Redução do patrimônio acumulado</span><strong class="num amb" id="pComp">—</strong></div>
   </div>
-  <p class="lead" id="pTxt">O patrimônio fica no zero a zero: você só deixa de guardar a renda nova deste mês. A perda de verdade é o que for sacado do que já estava guardado.</p>
+  <p class="lead" id="pTxt">A renda destinada ao risco também pode ser perdida. Sem saques, o patrimônio aplicado informado é preservado neste cálculo; com saques, ele diminui. Isso não garante o resultado das operações.</p>
 </section>
 
 <section class="section" aria-labelledby="t-sim">
