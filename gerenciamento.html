@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gerenciamento de risco — Paraquedas do Trader Indisciplinado</title>
+<meta name="description" content="Simule meta, risco por operação, contratos de WIN e WDO e 20 dias de resultados, com alerta de drawdown.">
+<meta name="theme-color" content="#0F2235">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<!-- Prévia de link (WhatsApp, LinkedIn, Instagram): troque SEU-USUARIO e SEU-REPOSITORIO pelo endereço real -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Paraquedas do Trader Indisciplinado">
+<meta property="og:title" content="Gerenciamento de risco — Paraquedas do Trader Indisciplinado">
+<meta property="og:description" content="Simule meta, risco por operação, contratos de WIN e WDO e 20 dias de resultados, com alerta de drawdown.">
+<meta property="og:url" content="https://SEU-USUARIO.github.io/SEU-REPOSITORIO/gerenciamento.html">
+<meta property="og:image" content="https://SEU-USUARIO.github.io/SEU-REPOSITORIO/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/tema.js"></script>
+</head>
+<body class="page-wide">
+<nav class="topbar" aria-label="Principal">
+  <div class="topbar-in">
+    <a class="brand" href="./">
+      <svg viewBox="0 0 420 440" aria-hidden="true"><path d="M30 190 Q210 -40 390 190 Q345 165 300 190 Q255 165 210 190 Q165 165 120 190 Q75 165 30 190 Z" fill="#2FA36F"/><g stroke="#DCE7F0" stroke-width="14" fill="none"><line x1="30" y1="190" x2="165" y2="335"/><line x1="210" y1="190" x2="210" y2="335"/><line x1="390" y1="190" x2="255" y2="335"/></g><rect x="140" y="330" width="140" height="100" rx="14" fill="#FFFFFF"/></svg>
+      <span>Paraquedas do Trader <em>Indisciplinado</em></span>
+    </a>
+    <div class="nav">
+      <a href="./">Paraquedas</a>
+      <a href="gerenciamento.html" aria-current="page">Gerenciamento</a>
+          <button type="button" class="theme-btn" id="btnTema" aria-label="Mudar tema">
+        <svg class="ico-lua" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="ico-sol" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+<header class="hero">
+  <div class="hero-in">
+    <div class="hero-text">
+      <span class="eyebrow">Simulador de gerenciamento</span>
+      <h1>Gerenciamento de <em>risco</em></h1>
+      <p>Defina capital, meta e risco por operação. Veja quantos contratos operar e simule 20 dias de resultados.</p>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="section" aria-labelledby="t-reg">
+  <span class="eyebrow">1 · Antes de começar</span>
+  <h2 id="t-reg">4 regras de disciplina</h2>
+  <p class="lead">A disciplina é o fermento das suas finanças. Sem ela, nenhum percentual de acerto salva o mês.</p>
+  <div class="rules-hl">
+    <div class="rule-hl r-green">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>
+      <strong>Risco fixo por operação</strong>
+      <span>Defina antes de abrir a plataforma e não mude no meio do dia.</span>
+    </div>
+    <div class="rule-hl r-blue">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M4 12h7M4 17h4"/><path d="M17 5v14M14 16l3 3 3-3"/></svg>
+      <strong>Contratos pelo stop</strong>
+      <span>Stop maior, menos contratos. O risco em reais fica o mesmo.</span>
+    </div>
+    <div class="rule-hl r-red">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+      <strong>Alerta aceso, pare</strong>
+      <span>Drawdown atingido encerra o período. Sem exceção.</span>
+    </div>
+    <div class="rule-hl r-amber">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
+      <strong>Meta não é obrigação</strong>
+      <span>Bateu a meta? Proteja o resultado em vez de forçar entradas.</span>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="t-meta">
+  <span class="eyebrow">2 · Meta, limites e contratos</span>
+  <h2 id="t-meta">Quanto arriscar e quantos contratos operar</h2>
+  <div class="row3">
+    <form class="panel" id="formMeta" autocomplete="off">
+      <h3>Controle de meta</h3>
+      <div class="field">
+        <label for="cap">Capital inicial (R$)</label>
+        <input type="number" id="cap" min="0" step="500" value="10000" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="meta">Meta do mês (%)</label>
+        <input type="number" id="meta" min="0" step="0.5" value="5" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label for="risco">Risco por operação (%)</label>
+        <input type="number" id="risco" min="0" step="0.25" value="1" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label for="dd">Drawdown máximo (%)</label>
+        <input type="number" id="dd" min="0" step="0.5" value="5" inputmode="decimal">
+        <span class="hint">Perda acumulada em que você para de operar.</span>
+      </div>
+    </form>
+    <div class="panel" aria-live="polite">
+      <h3>Seus limites</h3>
+      <div class="kpis kpis-1">
+        <div class="kpi"><span>Risco por operação</span><strong class="num" id="kRisco">—</strong><small>stop financeiro de cada trade</small></div>
+        <div class="kpi"><span>Drawdown máximo</span><strong class="num neg" id="kDD">—</strong><small>perda acumulada que acende o alerta</small></div>
+        <div class="kpi"><span>Meta do mês</span><strong class="num pos" id="kMeta">—</strong><small id="kMetaPct">—</small></div>
+        <div class="kpi"><span>Stops cheios até o alerta</span><strong class="num" id="kStops">—</strong><small>perdas seguidas do tamanho do risco</small></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Contratos por tamanho de stop</h3>
+      <span class="foot">Contratos = risco ÷ (pontos × valor do ponto), arredondado para baixo. Edite os stops para testar.</span>
+      <div class="ctr-grid">
+        <div>
+          <div class="ativo"><span class="ativo-tag t-win">WIN</span><span><strong>Mini Índice</strong><small>R$ 0,20 por ponto</small></span></div>
+          <div class="ctr-calc"><table class="compact">
+            <thead><tr><th scope="col">Stop (pts)</th><th scope="col">Contr.</th><th scope="col">Financeiro</th></tr></thead>
+            <tbody id="tWin"></tbody>
+          </table></div>
+        </div>
+        <div>
+          <div class="ativo"><span class="ativo-tag t-wdo">WDO</span><span><strong>Mini Dólar</strong><small>R$ 10,00 por ponto</small></span></div>
+          <div class="ctr-calc"><table class="compact">
+            <thead><tr><th scope="col">Stop (pts)</th><th scope="col">Contr.</th><th scope="col">Financeiro</th></tr></thead>
+            <tbody id="tWdo"></tbody>
+          </table></div>
+        </div>
+      </div>
+      <p class="warn" id="warnCtr" hidden>Em vermelho: o risco não paga nem 1 contrato com esse stop.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="t-dia">
+  <span class="eyebrow">3 · Simulação</span>
+  <h2 id="t-dia">Diário de 20 dias</h2>
+  <p class="lead">Escolha um percentual de acerto e veja o mês com stop respeitado. Ou digite seus próprios resultados (sinal de menos para perdas). Nada fica salvo.</p>
+  <div class="panel cenarios">
+    <div class="cen-ctrl">
+      <div class="field">
+        <label for="cenAcerto">Cenário de acerto</label>
+        <select id="cenAcerto">
+          <option value="25">25% de acerto</option>
+          <option value="30">30% de acerto</option>
+          <option value="35" selected>35% de acerto</option>
+          <option value="45">45% de acerto</option>
+          <option value="50">50% de acerto</option>
+          <option value="75">75% de acerto</option>
+          <option value="80">80% de acerto</option>
+          <option value="livre">Meus resultados</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="lbl" id="payLbl">Gain por stop (payoff)</span>
+        <div class="seg" role="group" aria-labelledby="payLbl" id="payoff">
+          <button type="button" data-v="2" aria-pressed="false">2 para 1</button>
+          <button type="button" data-v="mix" aria-pressed="true">Misto 2 e 3</button>
+          <button type="button" data-v="3" aria-pressed="false">3 para 1</button>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn" id="btnSortear">Sortear outra ordem</button>
+        <button type="button" class="btn" id="btnLimpar">Limpar resultados</button>
+      </div>
+    </div>
+    <p class="licao" id="licao" aria-live="polite">—</p>
+    <div class="matriz-head">
+      <span class="eyebrow">Onde a disciplina vira lucro</span>
+      <span class="foot" id="empate">—</span>
+    </div>
+    <div class="matriz" id="matriz"></div>
+    <p class="foot norte">Os cenários são um norte, não uma promessa. Na prática, manter gains de 2 a 3 vezes o stop é muito difícil. O que está sempre sob o seu controle é o tamanho do stop.</p>
+  </div>
+  <div class="sim">
+    <div class="table-box">
+      <table class="compact">
+        <thead><tr><th scope="col">Dia</th><th scope="col">Resultado (R$)</th><th scope="col">Situação</th><th scope="col">% do dia</th><th scope="col">Saldo</th><th scope="col">% da meta</th></tr></thead>
+        <tbody id="tDias"></tbody>
+      </table>
+    </div>
+    <div class="sim-side">
+      <div class="alert" id="alerta" role="alert" hidden>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+        <span id="alertaTxt">Alerta: drawdown atingido. Pare de operar e revise o plano.</span>
+      </div>
+      <div class="tiles tiles2">
+        <div class="tile"><span>Saldo atual</span><strong class="num" id="sSaldo">—</strong><small id="sRes">—</small></div>
+        <div class="tile"><span>Meta atingida</span><strong class="num" id="sMeta">—</strong><div class="bar" aria-hidden="true"><i id="bMeta" style="width:0%"></i></div></div>
+        <div class="tile"><span>Drawdown usado</span><strong class="num" id="sDD">—</strong><div class="bar danger" aria-hidden="true"><i id="bDD" style="width:0%"></i></div></div>
+        <div class="tile"><span>Acertos</span><strong class="num" id="sAcerto">—</strong><small id="sGL">—</small></div>
+      </div>
+      <div class="chart-box">
+        <div class="legend"><span style="--c: var(--green)">Gain</span><span style="--c: var(--red)">Loss</span></div>
+        <svg id="chBar" viewBox="0 0 600 240" role="img" aria-label="Resultado de cada dia"></svg>
+      </div>
+      <div class="chart-box">
+        <svg id="chPie" viewBox="0 0 600 200" role="img" aria-label="Proporção de dias com gain e loss"></svg>
+      </div>
+    </div>
+  </div>
+  <p class="foot">Dias em branco ou com resultado zero não contam como gain nem loss. O percentual do dia é sempre sobre o capital inicial. "% da meta" mostra quanto da meta o saldo já alcançou: 100% é meta batida. Conteúdo educativo, não é recomendação de investimento.</p>
+</section>
+
+</main>
+<script src="assets/gerenciamento.js"></script>
+</body>
+</html>
