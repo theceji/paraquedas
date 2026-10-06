@@ -49,7 +49,7 @@ img { max-width: 100% }
 .hero h1 em { font-style: normal; color: var(--accent-light) }
 .hero p { font-size: 19px; color: var(--on-navy-muted); max-width: 52ch }
 .hero .eyebrow { color: var(--on-navy-muted) }
-.hero svg { width: 150px; height: auto; flex: 0 0 auto }
+.hero-in > svg { width: 150px; height: auto; flex: 0 0 auto }
 
 /* Blocos */
 .section { display: flex; flex-direction: column; gap: 18px }
@@ -117,7 +117,7 @@ td input[type="number"] { min-height: 40px; padding: 6px 10px; text-align: right
 .pill.loss { background: var(--red-soft); color: var(--red) }
 .zero { color: var(--red); font-weight: 700 }
 
-@media (prefers-reduced-motion: no-preference) { .days i, .budget-bar div, .bar i { transition: background .2s, flex-grow .3s, width .3s } }
+.days i, .budget-bar div, .bar i { transition: background .2s, flex-grow .3s, width .3s }
 
 /* Página Paraquedas */
 .budget-bar { display: flex; height: 64px; border-radius: 12px; overflow: hidden; background: var(--line) }
@@ -236,9 +236,9 @@ table.compact td input[type="number"] { min-height: 36px; padding: 4px 8px; font
 .drop-scene .canopy { transform-origin: 148px 222px }
 .drop-scene .novo { transform-origin: 148px 260px }
 .drop-scene .canopy { opacity: 0 }
-.drop-scene.play .drop { animation: pq-cair 2.6s cubic-bezier(.3,.55,.35,1) both }
-.drop-scene.play .canopy { animation: pq-fechar 3.4s ease-in both }
-.drop-scene.play .pile { animation: pq-pilha 3.4s ease-out both }
+.drop-scene.play .drop { animation: pq-cair 3.2s .4s cubic-bezier(.3,.55,.35,1) both }
+.drop-scene.play .canopy { animation: pq-fechar 4.1s .4s ease-in both }
+.drop-scene.play .pile { animation: pq-pilha 4.1s .4s ease-out both }
 @keyframes pq-cair {
   0%   { transform: translate(0, -330px) rotate(-7deg) }
   25%  { transform: translate(8px, -240px) rotate(6deg) }
@@ -248,16 +248,64 @@ table.compact td input[type="number"] { min-height: 36px; padding: 4px 8px; font
   100% { transform: translate(0, 0) rotate(0) }
 }
 @keyframes pq-fechar {
-  0%, 74% { opacity: 1; transform: none }
+  0%, 76% { opacity: 1; transform: none }
   100%    { opacity: 0; transform: translate(0, 30px) scale(0.55, 0.15) }
 }
 @keyframes pq-pilha {
-  0%, 74% { transform: none }
-  80%     { transform: translateY(3px) }
-  88%     { transform: translateY(-1px) }
+  0%, 76% { transform: none }
+  82%     { transform: translateY(3px) }
+  90%     { transform: translateY(-1px) }
   100%    { transform: none }
 }
-@media (prefers-reduced-motion: reduce) {
-  .drop-scene.play .drop, .drop-scene.play .canopy, .drop-scene.play .pile { animation: none }
-}
 @media (max-width: 640px) { .hero .drop-btn svg { width: 170px } }
+
+/* Abas grandes na base do topo */
+.hero:has(.tabs) { padding-bottom: 0; margin-bottom: 0 }
+.tabs { max-width: 980px; margin: 32px auto 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end }
+.page-wide .tabs { max-width: 1360px; margin-top: 22px }
+.tab { display: flex; align-items: center; gap: 14px; padding: 18px 20px; min-height: 76px; border-radius: 18px 18px 0 0; text-decoration: none; font-family: var(--body); transition: transform .18s ease, background .18s ease }
+.tab .tab-ico { width: 34px; height: 34px; flex: 0 0 auto }
+.tab-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 }
+.tab-txt strong { font-family: var(--display); font-weight: 900; font-size: 22px; line-height: 1.1 }
+.tab-txt small { font-size: 14px; line-height: 1.3 }
+.tab-go { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-size: 15px; padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,0.18); white-space: nowrap }
+.tab-go svg { width: 18px; height: 18px; flex: 0 0 auto; transition: transform .18s ease }
+/* aba da página atual: mesma cor do fundo, "encaixa" no conteúdo */
+.tab[aria-current="page"] { background: var(--bg); color: var(--ink); cursor: default; padding-top: 16px }
+.tab[aria-current="page"] .tab-ico { color: var(--green) }
+.tab[aria-current="page"] small { color: var(--muted) }
+/* aba para trocar de página: verde, chamativa */
+.tab:not([aria-current]) { background: #2FA36F; color: #FFFFFF; margin-bottom: 10px; border-radius: 18px; box-shadow: 0 6px 0 #1E7A50 }
+.tab:not([aria-current]) small { color: rgba(255,255,255,0.9) }
+.tab:not([aria-current]):hover { transform: translateY(-3px); background: #33B07A }
+.tab:not([aria-current]):hover .tab-go svg { transform: translateX(4px) }
+.tab:not([aria-current]):active { transform: translateY(2px); box-shadow: 0 3px 0 #1E7A50 }
+.tab:focus-visible { outline: 3px solid var(--accent-light); outline-offset: 3px }
+.tab:not([aria-current]) .tab-go { animation: pq-chamar 2.4s ease-in-out 4.6s 2 }
+@keyframes pq-chamar { 0%, 100% { transform: none } 50% { transform: translateX(5px) } }
+@media (max-width: 640px) {
+  .tabs { gap: 8px; margin-top: 22px }
+  .tab { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px; min-height: 0 }
+  .tab-txt strong { font-size: 18px }
+  .tab-txt small { font-size: 12.5px }
+  .tab .tab-ico { width: 26px; height: 26px }
+  .tab-go { font-size: 13px; padding: 6px 10px }
+}
+
+@media (max-width: 640px) {
+  .hero { overflow-x: clip }
+  .hero-in { flex-direction: column; align-items: stretch }
+  .hero-text { flex: 0 0 auto }
+  .hero .drop-btn { align-self: center }
+  .tab { min-width: 0 }
+  .tab-go { max-width: 100% }
+}
+.hero:has(.tabs) + .wrap { padding-top: 20px }
+.topbar-in { flex-wrap: nowrap }
+.brand { min-width: 0 }
+.brand span { overflow-wrap: anywhere }
+@media (max-width: 640px) {
+  .brand { font-size: 14px; gap: 8px }
+  .brand svg { width: 24px; height: 24px }
+  .hero .drop-btn svg { width: 150px }
+}
