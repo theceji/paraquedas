@@ -13,7 +13,6 @@
     continuation.style.strokeDasharray = '1'; continuation.style.strokeDashoffset = String(1 - after);
     shadow.style.opacity = String(.2 * progress);
   }
-  function finish() { cancelAnimationFrame(frame); draw(1, 1); }
   function play() {
     cancelAnimationFrame(frame); draw(0, 0);
     const start = performance.now();
@@ -24,10 +23,9 @@
     }
     frame = requestAnimationFrame(tick);
   }
-  // Rever é uma ação explícita; não há controle de pausa nem preferência antiga salva.
+  // A apresentação sempre toca ao carregar, independentemente do movimento do sistema.
   btn.addEventListener('click', play);
-  new MutationObserver(() => {
-    if (document.documentElement.dataset.motion === 'reduced') finish(); else play();
-  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-motion'] });
-  if (document.documentElement.dataset.motion === 'reduced') finish(); else play();
+  draw(0, 0);
+  if (document.readyState === 'complete') play();
+  else window.addEventListener('load', play, { once: true });
 })();
