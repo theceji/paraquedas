@@ -81,7 +81,7 @@
     }
     if (b.saque > 0 && reserva !== 'nao') { if (cor !== 'vermelho') cor = 'ambar'; msgs.push(brl(b.saque) + ' retirados do patrimônio: má decisão, essa parte não tem paraquedas.'); }
     if (cor !== 'vermelho' && (b.orc <= 0 || b.stop <= 0)) cor = 'neutro';
-    const tit = cor === 'neutro' ? (b.orc <= 0 ? 'Sem orçamento para operar' : 'Defina um limite diário') : cor === 'verde' ? 'Obrigações informadas cobertas' : cor === 'ambar' ? 'Atenção às condições do plano' : 'Pare e reorganize suas contas';
+    const tit = cor === 'neutro' ? (b.orc <= 0 ? 'Sem orçamento para operar' : 'Defina um limite diário') : cor === 'verde' ? 'Obrigações informadas cobertas' : cor === 'ambar' ? 'Atenção às condições do gerenciamento' : 'Pare e reorganize suas contas';
     if (cor === 'verde') msgs.push('Conforme os dados informados, as contas e a reserva estão cobertas. O orçamento pode ser perdido; este resultado não garante segurança nas operações.');
     if (cor === 'neutro') msgs.push('Defina um orçamento e um limite de perda antes de calcular operações.');
     return { cor, tit, msgs };
@@ -212,6 +212,9 @@
     const sh = $('stopHint');
     if (orc > 0 && b.stop > orc) { sh.textContent = 'Seu stop não pode passar do orçamento do mês (' + brl(orc) + '). Usando ' + brl(orc) + ' = 1 dia.'; sh.classList.add('neg'); }
     else { sh.classList.remove('neg'); sh.textContent = 'Total que você aceita perder no dia, somando as operações. É diferente do risco de cada trade.'; }
+    const origem = window.PlanoCartao && window.PlanoCartao.ler().ger;
+    $('gerResumo').hidden = !origem;
+    if (origem) $('gerResumoValores').textContent = (origem.exemplo ? 'Exemplo do Gerenciamento: ' : 'Seus limites: ') + 'capital ' + brl(origem.cap) + ' · meta ' + brl(origem.metaR) + ' · risco por operação ' + brl(origem.risco) + ' · limite do período ' + brl(origem.dd) + '.';
     const g = stopGer(); $('btnStopGer').hidden = !(g !== null && Math.abs(g - b.stop) > 0.005);
     if (g !== null) $('btnStopGer').textContent = 'Usar ' + brl(g) + ' como limite diário';
     const relacao = $('relacaoLimites');
@@ -228,7 +231,7 @@
     const entradas = { ...Object.fromEntries(campos.map(id => [id, $(id).value])), fracSobra, reserva, reinv, exemplo, extras: b.extras.map(x => ({ tipo: x.tipo, valor: x.valor, pct: x.pct })) };
     ultimo = { pagina: 'pq', dados: { orc, saque: b.saque, rend: b.rend, stopEf, dias, semCor: sem.cor, semTit: sem.tit, entradas, exemplo } };
     const salvo = window.PlanoCartao && window.PlanoCartao.salvar('pq', ultimo.dados);
-    $('planoEstado').textContent = (exemplo ? 'Exemplo ilustrativo' : 'Meu plano') + (salvo ? ' · salvo neste navegador por 30 dias' : ' · armazenamento indisponível; mantenha a página aberta');
+    $('planoEstado').textContent = (exemplo ? 'Exemplo ilustrativo' : 'Meu gerenciamento') + (salvo ? ' · salvo neste navegador por 30 dias' : ' · armazenamento indisponível; mantenha a página aberta');
     $('days').innerHTML = Array.from({ length: 20 }, (_, i) => `<i class="${i < dias ? 'on' : ''}"></i>`).join('');
 
     const w = $('warn');
@@ -299,9 +302,8 @@
   const salvo = window.PlanoCartao && window.PlanoCartao.ler().pq;
   if (salvo && salvo.entradas) restaurar(salvo.entradas);
   $('btnExemplo').addEventListener('click', () => {
-    if (!exemplo && !window.confirm('Substituir os valores do seu plano pelos valores de exemplo?')) return;
+    if (!exemplo && !window.confirm('Substituir os valores do seu gerenciamento pelos valores de exemplo?')) return;
     restaurar({ ...padrao, exemplo: true }); $('sobraErro').hidden = true; render();
   });
-  if (window.PlanoCartao) window.PlanoCartao.ligar('btnCartao', () => ultimo);
   render();
 })();

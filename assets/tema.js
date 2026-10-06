@@ -1,5 +1,5 @@
 /* Tema claro/escuro.
-   Sem escolha salva, o site segue o tema do sistema (prefers-color-scheme); se o navegador não informar, abre no claro.
+   Sem escolha salva, respeita o tema inicial definido pela página; nas ferramentas segue o sistema (prefers-color-scheme), com fallback claro.
    O botão alterna e lembra a escolha neste navegador. Carregado no <head> para não piscar o tema errado. */
 (function () {
   var CHAVE = 'paraquedas-tema';

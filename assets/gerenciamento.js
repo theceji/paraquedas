@@ -172,11 +172,11 @@
     const entradas = { ...Object.fromEntries(campos.map(id => [id, $(id).value])), stopsWin: p.stopsWin, stopsWdo: p.stopsWdo, exemplo };
     ultimo = { pagina: 'ger', dados: { cap: p.cap, metaPct: p.metaPct, riscoPct: p.riscoPct, ddPct: p.ddPct, risco: r.risco, dd: r.dd, metaR: r.metaR, stopsWin: p.stopsWin, stopsWdo: p.stopsWdo, entradas, exemplo } };
     const salvo = window.PlanoCartao && window.PlanoCartao.salvar('ger', ultimo.dados);
-    $('planoEstado').textContent = (exemplo ? 'Exemplo ilustrativo' : 'Meu plano') + (salvo ? ' · limites salvos neste navegador por 30 dias' : ' · armazenamento indisponível; mantenha a página aberta');
+    $('planoEstado').textContent = (exemplo ? 'Exemplo ilustrativo' : 'Meu gerenciamento') + (salvo ? ' · limites salvos neste navegador por 30 dias' : ' · armazenamento indisponível; mantenha a página aberta');
     const pq = window.PlanoCartao && window.PlanoCartao.ler().pq;
     const relacao = $('relacaoLimites');
     relacao.className = 'hint' + (pq && (pq.orc <= 0 || r.risco > pq.stopEf) ? ' neg' : '');
-    relacao.textContent = !pq ? 'Defina o limite diário na página Paraquedas para comparar com o risco por operação.' : pq.orc <= 0 ? 'O Paraquedas está sem orçamento. Nenhuma operação cabe no plano combinado.' : r.risco > pq.stopEf ? 'Risco por operação maior que o limite diário de ' + brl(pq.stopEf) + '. Ajuste os limites antes de operar.' : r.risco > 0 ? 'Limite diário ' + brl(pq.stopEf) + ' · até ' + Math.floor(pq.stopEf / r.risco + 1e-9) + ' perdas completas por dia.' : 'Defina um risco por operação maior que zero.';
+    relacao.textContent = !pq ? 'Defina o limite diário na página Paraquedas para comparar com o risco por operação.' : pq.orc <= 0 ? 'O Paraquedas está sem orçamento. Nenhuma operação cabe no gerenciamento combinado.' : r.risco > pq.stopEf ? 'Risco por operação maior que o limite diário de ' + brl(pq.stopEf) + '. Ajuste os limites antes de operar.' : r.risco > 0 ? 'Limite diário ' + brl(pq.stopEf) + ' · até ' + Math.floor(pq.stopEf / r.risco + 1e-9) + ' perdas completas por dia.' : 'Defina um risco por operação maior que zero.';
 
     let algumZero = false;
     r.win.forEach((x, i) => { const c = $('wc' + i); c.textContent = x.c; c.classList.toggle('zero', x.c === 0); $('wf' + i).textContent = brl(x.fin); if (x.c === 0) algumZero = true; });
@@ -195,7 +195,7 @@
       const linha = $('linha' + i);
       linha.classList.toggle('dia-limite', r.primeiroLimite === i + 1);
       linha.classList.toggle('dia-apos', r.primeiroLimite !== null && i + 1 > r.primeiroLimite && l.v !== null);
-      linha.title = r.primeiroLimite === i + 1 ? 'Limite de perda atingido neste dia' : r.primeiroLimite !== null && i + 1 > r.primeiroLimite && l.v !== null ? 'Lançamento após o limite: fora da regra do plano' : '';
+      linha.title = r.primeiroLimite === i + 1 ? 'Limite de perda atingido neste dia' : r.primeiroLimite !== null && i + 1 > r.primeiroLimite && l.v !== null ? 'Lançamento após o limite: fora da regra do gerenciamento' : '';
       if (linha.title) $('ds' + i).textContent += ' · ' + linha.title;
     });
 
@@ -213,7 +213,7 @@
     $('sGL').textContent = r.gains + ' gain · ' + r.losses + ' loss';
 
     $('alerta').hidden = !r.alerta;
-    if (r.alerta) $('alertaTxt').textContent = 'Limite de perda atingido no dia ' + r.primeiroLimite + ' (' + brl(r.totalNoLimite) + '). O período deveria encerrar nesse dia.' + (r.aposLimite ? ' Há ' + r.aposLimite + ' lançamento(s) posterior(es), fora da regra do plano. Ganhos posteriores não apagam esse limite.' : ' Pare e revise o plano.');
+    if (r.alerta) $('alertaTxt').textContent = 'Limite de perda atingido no dia ' + r.primeiroLimite + ' (' + brl(r.totalNoLimite) + '). O período deveria encerrar nesse dia.' + (r.aposLimite ? ' Há ' + r.aposLimite + ' lançamento(s) posterior(es), fora da regra do gerenciamento. Ganhos posteriores não apagam esse limite.' : ' Pare e revise o gerenciamento.');
 
     desenharBarras(r);
     desenharPizza(r);
@@ -319,7 +319,7 @@
   const salvo = window.PlanoCartao && window.PlanoCartao.ler().ger;
   if (salvo) restaurar(salvo.entradas || { cap: salvo.cap, meta: salvo.metaPct, risco: salvo.riscoPct, dd: salvo.ddPct, stopsWin: salvo.stopsWin, stopsWdo: salvo.stopsWdo });
   $('btnExemplo').addEventListener('click', () => {
-    if (!exemplo && !window.confirm('Substituir os limites do seu plano pelos valores de exemplo? Os resultados próprios serão mantidos.')) return;
+    if (!exemplo && !window.confirm('Substituir os limites do seu gerenciamento pelos valores de exemplo? Os resultados próprios serão mantidos.')) return;
     restaurar({ ...padrao, stopsWin: STOPS_WIN, stopsWdo: STOPS_WDO, exemplo: true });
     if (cenarioAtivo() !== null) aplicarCenario(); else { render(); atualizarCenarios(); }
   });

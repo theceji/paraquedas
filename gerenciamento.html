@@ -22,9 +22,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Figtree:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/experiencia.css">
 <script src="assets/tema.js"></script>
 </head>
-<body class="page-wide">
+<body class="page-wide tool-page">
 <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 <nav class="topbar" aria-label="Principal">
   <div class="topbar-in">
@@ -41,39 +42,9 @@
     </div>
   </div>
 </nav>
-<header class="hero">
-  <div class="hero-in">
-    <div class="hero-text">
-      <span class="eyebrow">Simulador de gerenciamento</span>
-      <h1>Gerenciamento de <em>risco</em></h1>
-      <p>Defina capital, meta e risco por operação. Veja quantos contratos operar e simule 20 dias de resultados.</p>
-      <a class="btn hero-cta" href="#t-meta">Começar meu plano ↓</a>
-    </div>
-    <div class="hero-art" aria-hidden="true">
-      <svg viewBox="0 0 296 350">
-        <line x1="10" y1="341" x2="286" y2="341" stroke="#3A5670" stroke-width="2"/>
-        <g>
-          <rect x="34" y="281" width="30" height="60" rx="4" fill="#2FA36F"/>
-          <rect x="74" y="311" width="30" height="30" rx="4" fill="#C7493B"/>
-          <rect x="114" y="241" width="30" height="100" rx="4" fill="#2FA36F"/>
-          <rect x="154" y="301" width="30" height="40" rx="4" fill="#C7493B"/>
-          <rect x="194" y="201" width="30" height="140" rx="4" fill="#2FA36F"/>
-          <rect x="234" y="151" width="30" height="190" rx="4" fill="#2FA36F"/>
-        </g>
-        <path d="M49 262 L89 292 L129 222 L169 282 L209 182 L249 132" fill="none" stroke="#7FD1A8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        <g transform="translate(222 60)">
-          <circle cx="27" cy="27" r="26" fill="none" stroke="#F2B544" stroke-width="4"/>
-          <circle cx="27" cy="27" r="15" fill="none" stroke="#F2B544" stroke-width="4"/>
-          <circle cx="27" cy="27" r="5" fill="#F2B544"/>
-        </g>
-      </svg>
-      <span class="drop-hint">Simule seus 20 dias abaixo</span>
-    </div>
-  </div>
-  <nav class="tabs" aria-label="Ferramentas">
-    <a class="tab" href="./"><svg class="tab-ico" viewBox="0 0 420 440" aria-hidden="true"><path d="M30 190 Q210 -40 390 190 Q345 165 300 190 Q255 165 210 190 Q165 165 120 190 Q75 165 30 190 Z" fill="currentColor"/><g stroke="currentColor" stroke-width="16" fill="none"><line x1="30" y1="190" x2="165" y2="335"/><line x1="210" y1="190" x2="210" y2="335"/><line x1="390" y1="190" x2="255" y2="335"/></g><rect x="140" y="330" width="140" height="100" rx="14" fill="currentColor"/></svg><span class="tab-txt"><strong>Paraquedas</strong><small>Orçamento de risco pela sua renda</small></span><span class="tab-go" aria-hidden="true">Abrir<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-    <a class="tab" href="gerenciamento.html" aria-current="page"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="tab-txt"><strong>Gerenciamento</strong><small>Meta, contratos e 20 dias de simulação</small></span></a>
-  </nav>
+<header class="tool-header">
+  <div class="tool-heading"><div><span class="eyebrow">Ferramenta gratuita · sem cadastro</span><h1>Gerenciamento de risco</h1><p>Defina sua meta, seus limites e o tamanho de cada operação.</p></div><a class="back-home" href="./">← Início</a></div>
+  <nav class="tool-tabs" aria-label="Ferramentas"><a href="gerenciamento.html" aria-current="page"><span>01</span> Gerenciamento</a><a href="paraquedas.html" ><span>02</span> Paraquedas</a></nav>
 </header>
 
 <main class="wrap" id="conteudo">
@@ -82,7 +53,6 @@
   <span class="eyebrow">1 · Antes de começar</span>
   <h2 id="t-reg">4 regras de disciplina</h2>
   <p class="lead">A disciplina é o fermento das suas finanças. Sem ela, nenhum percentual de acerto salva o mês.</p>
-  <details class="regras-details"><summary>Ver as 4 regras de disciplina</summary>
   <div class="rules-hl">
     <div class="rule-hl r-green">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>
@@ -105,7 +75,6 @@
       <span>Bateu a meta? Proteja o resultado em vez de forçar entradas.</span>
     </div>
   </div>
-</details>
 </section>
 
 <section class="section" aria-labelledby="t-meta">
@@ -142,9 +111,9 @@
         <p class="hint" id="relacaoLimites"></p>
         <div class="kpi"><span>Perdas completas até o limite</span><strong class="num" id="kStops">—</strong><small>perdas seguidas do tamanho do risco</small></div>
       </div>
-      <div class="cartao-acao">
-        <button type="button" class="btn btn-cartao" id="btnCartao">Gerar meu cartão do plano</button>
-        <span class="hint">Junta estes números com os da página Paraquedas numa imagem para salvar ou imprimir.</span>
+      <div class="cartao-acao" id="emitir-cartao">
+        <button type="button" class="btn btn-cartao" id="btnCartao">Gerar meu cartão de gerenciamento de risco</button>
+        <span class="hint">Grátis. Reúne seus limites e o orçamento do Paraquedas, quando preenchido. Cores suaves para salvar ou imprimir.</span>
       </div>
     </div>
     <div class="panel">
@@ -169,7 +138,8 @@
       <p class="warn" id="warnCtr" hidden>Em vermelho: o risco não paga nem 1 contrato com esse stop.</p>
     </div>
   </div>
-  <div class="cartao-prev" id="cartaoPrev" hidden></div>
+  <div class="bridge-panel"><div><span class="eyebrow">Próximo passo · opcional</span><h3>O risco cabe na sua renda?</h3><p>Leve sua meta e seus limites ao Paraquedas, confira o orçamento mensal e depois volte para emitir seu cartão.</p></div><a class="btn btn-primary" href="paraquedas.html">Refinar com minha renda →</a></div>
+  <p class="hint" id="cartaoAviso" role="status"></p>
 </section>
 
 <section class="section" aria-labelledby="t-dia">
@@ -223,7 +193,7 @@
     <div class="sim-side">
       <div class="alert" id="alerta" role="alert" hidden>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
-        <span id="alertaTxt">Alerta: limite de perda atingido. Pare de operar e revise o plano.</span>
+        <span id="alertaTxt">Alerta: limite de perda atingido. Pare de operar e revise o gerenciamento.</span>
       </div>
       <div class="tiles tiles2">
         <div class="tile"><span>Saldo atual</span><strong class="num" id="sSaldo">—</strong><small id="sRes">—</small></div>
@@ -244,6 +214,12 @@
 </section>
 
 </main>
+<footer class="tool-footer"><span>Gratuito. Sem assinatura. Seus números ficam neste navegador.</span><a href="LICENSE">Licença MIT</a></footer>
+<dialog id="cartaoDialog" class="cartao-dialog" aria-labelledby="cartaoTitulo" aria-describedby="cartaoDescricao">
+  <div class="cartao-dialog-head"><div><span class="eyebrow">Seu arquivo · gratuito</span><h2 id="cartaoTitulo">Cartão de gerenciamento de risco</h2></div><button class="btn modal-close" id="fecharCartao" type="button" aria-label="Fechar prévia do cartão" autofocus>Fechar ×</button></div>
+  <p id="cartaoDescricao">Confira seus números. O PNG tem fundo branco e cores suaves para impressão.</p>
+  <div class="cartao-dialog-body"><div class="cartao-preview"><p id="cartaoCarregando" role="status">Preparando seu cartão…</p><img id="cartaoImagem" alt="Prévia do cartão de gerenciamento de risco" hidden></div><div class="cartao-download"><div id="cartaoResumo"></div><p class="hint" id="cartaoDica"></p><a id="baixarCartao" class="btn btn-primary" hidden>Baixar cartão (PNG) ↓</a><p class="hint">Esta janela fecha ao iniciar o download. Você também pode fechar sem baixar.</p></div></div>
+</dialog>
 <script src="assets/cartao.js"></script>
 <script src="assets/gerenciamento.js"></script>
 </body>
