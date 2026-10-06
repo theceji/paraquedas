@@ -127,32 +127,25 @@
     }
 
     // Meu mês (Paraquedas) | Minha operação (Gerenciamento)
-    const colW = (W - 2 * M - 24) / 2, xL = M, xR = M + colW + 24, hBox = 330;
+    const colW = (W - 2 * M - 24) / 2, xL = M, xR = M + colW + 24, hBox = 300;
     if (P.pq) {
       rr(ctx, xL, y, colW, hBox, 22, C.card);
       txt(ctx, 'MEU MÊS', xL + 28, y + 46, '800 20px ' + F.b, C.green);
-      bloco(ctx, xL + 28, y + 88, colW - 56, 'Orçamento de risco', brl(P.pq.orc), P.pq.saque > 0 ? brl(P.pq.saque) + ' sem paraquedas' : '100% renda nova do mês', C.green);
+      bloco(ctx, xL + 28, y + 88, colW - 56, 'Orçamento de risco', brl(P.pq.orc), P.pq.saque > 0 ? brl(P.pq.saque) + ' retirados do patrimônio' : '100% renda nova do mês', C.green);
       bloco(ctx, xL + 28, y + 196, (colW - 56) / 2 - 8, 'Stop diário', brl(P.pq.stopEf), null);
       bloco(ctx, xL + 28 + (colW - 56) / 2 + 8, y + 196, (colW - 56) / 2 - 8, 'Dias', P.pq.dias + (P.pq.dias === 1 ? ' dia' : ' dias'), null);
-      txt(ctx, 'Bateu o stop do dia, desliga.', xL + 28, y + hBox - 26, '700 19px ' + F.b, C.muted);
     } else faltando(ctx, xL, y, colW, hBox, 'Complete na página Paraquedas');
     if (P.ger) {
       rr(ctx, xR, y, colW, hBox, 22, C.card);
       txt(ctx, 'MINHA OPERAÇÃO', xR + 28, y + 46, '800 20px ' + F.b, C.blue);
-      bloco(ctx, xR + 28, y + 88, colW - 56, 'Risco por operação', brl(P.ger.risco), P.stopsPorDia === 0 ? 'acima do stop diário' : P.stopsPorDia !== null ? 'até ' + P.stopsPorDia + (P.stopsPorDia === 1 ? ' stop' : ' stops') + ' por dia' : P.ger.riscoPct.toLocaleString('pt-BR') + '% de ' + brl(P.ger.cap), C.ink);
+      bloco(ctx, xR + 28, y + 88, colW - 56, 'Risco por operação', brl(P.ger.risco), P.stopsPorDia === 0 ? 'maior que o stop diário!' : P.stopsPorDia !== null ? 'até ' + P.stopsPorDia + (P.stopsPorDia === 1 ? ' stop' : ' stops') + ' por dia' : P.ger.riscoPct.toLocaleString('pt-BR') + '% de ' + brl(P.ger.cap), C.ink);
       bloco(ctx, xR + 28, y + 196, (colW - 56) / 2 - 8, 'Meta do mês', brl(P.ger.metaR), P.ger.metaPct.toLocaleString('pt-BR') + '%', C.green);
       bloco(ctx, xR + 28 + (colW - 56) / 2 + 8, y + 196, (colW - 56) / 2 - 8, 'Drawdown', brl(-P.ger.dd), 'alerta: pare', C.red);
     } else faltando(ctx, xR, y, colW, hBox, 'Complete na página Gerenciamento');
     y += hBox + 22;
 
-    if (P.alertaRisco) {
-      rr(ctx, M, y, W - 2 * M, 52, 14, C.redSoft);
-      txt(ctx, 'Atenção: o risco por operação é maior que o stop diário.', M + 24, y + 34, '700 21px ' + F.b, C.red);
-      y += 70;
-    }
-
     // Contratos
-    const hCtr = 400;
+    const hCtr = 370;
     rr(ctx, M, y, W - 2 * M, hCtr, 22, C.card);
     txt(ctx, 'QUANTOS CONTRATOS OPERAR', M + 28, y + 46, '800 20px ' + F.b, C.ink);
     txt(ctx, 'Calculado ' + P.baseTxt + ': ' + brl(P.baseRisco), W - M - 28, y + 46, '600 18px ' + F.b, C.muted, 'right');
@@ -161,27 +154,30 @@
       const ty = y + 74;
       rr(ctx, x, ty, 74, 38, 8, corTag); txt(ctx, tag, x + 37, ty + 27, '900 20px ' + F.d, corTxt, 'center');
       txt(ctx, nome, x + 88, ty + 27, '800 22px ' + F.d, C.ink);
-      rr(ctx, x, ty + 54, tW, 256, 14, C.calc);
+      rr(ctx, x, ty + 54, tW, 226, 14, C.calc);
       txt(ctx, 'STOP (PTS)', x + 20, ty + 86, '700 15px ' + F.b, C.muted);
       txt(ctx, 'CONTRATOS', x + tW - 20, ty + 86, '700 15px ' + F.b, C.muted, 'right');
       linhas.forEach((l, i) => {
-        const ly = ty + 122 + i * 31;
+        const ly = ty + 116 + i * 28;
         txt(ctx, l.p.toLocaleString('pt-BR'), x + 20, ly, '700 22px ' + F.b, C.ink);
         txt(ctx, String(l.c), x + tW - 20, ly, '900 24px ' + F.d, l.c === 0 ? C.red : C.ink, 'right');
       });
     });
     y += hCtr + 22;
 
-    // Regras
-    const regras = [['Risco fixo por operação', C.green], ['Contratos pelo stop', C.blue], ['Alerta aceso, pare', C.red], ['Meta não é obrigação', C.amber]];
-    const rW = (W - 2 * M - 3 * 12) / 4;
-    regras.forEach(([r, cor], i) => {
-      const x = M + i * (rW + 12);
-      rr(ctx, x, y, rW, 84, 16, cor);
-      const corT = cor === C.amber ? '#3A2600' : '#FFFFFF';
-      const palavras = r.split(' '); const meio = Math.ceil(palavras.length / 2);
-      txt(ctx, palavras.slice(0, meio).join(' '), x + rW / 2, y + 36, '800 20px ' + F.d, corT, 'center');
-      txt(ctx, palavras.slice(meio).join(' '), x + rW / 2, y + 62, '800 20px ' + F.d, corT, 'center');
+    // Regras de ouro (título + explicação), em 2×2
+    const regras = [
+      ['Bateu o stop, desliga.', 'O dia acabou. Amanhã tem outro.', C.green, '#FFFFFF'],
+      ['Stop não acumula.', 'Sobra de hoje não vira crédito amanhã.', C.blue, '#FFFFFF'],
+      ['Nunca dobre para recuperar.', 'Aumentar o lote depois de perder quebra contas.', C.red, '#FFFFFF'],
+      ['Anote cada trade.', 'Entrada, saída e motivo. Revise toda semana.', C.amber, '#3A2600']
+    ];
+    const rW = (W - 2 * M - 12) / 2, rH = 86;
+    regras.forEach(([t, e, cor, corT], i) => {
+      const x = M + (i % 2) * (rW + 12), ry = y + Math.floor(i / 2) * (rH + 12);
+      rr(ctx, x, ry, rW, rH, 16, cor);
+      txt(ctx, caber(ctx, t, '900 24px ' + F.d, rW - 44), x + 22, ry + 38, '900 24px ' + F.d, corT);
+      txt(ctx, caber(ctx, e, '600 18px ' + F.b, rW - 44), x + 22, ry + 66, '600 18px ' + F.b, corT);
     });
 
     // Rodapé
@@ -221,6 +217,7 @@
 
   window.PlanoCartao = {
     salvar,
+    ler: lerTudo,
     ligar: function (btnId, atual) {
       const btn = document.getElementById(btnId);
       if (btn) btn.addEventListener('click', () => gerar(btn, atual));

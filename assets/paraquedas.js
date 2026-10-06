@@ -1,5 +1,5 @@
 /* Paraquedas do Trader Indisciplinado — calculadora em 3 passos (obrigações, renda para o risco, resultado com semáforo) e simulação de 12 meses.
-   Verde = renda nova do mês destinada ao risco (qualquer fonte). Âmbar = saque do que já estava guardado. */
+   Verde = renda nova do mês destinada ao risco (qualquer fonte). Vermelho/âmbar = dinheiro retirado do patrimônio (má decisão). */
 (function () {
   const $ = (id) => document.getElementById(id);
   const brl = (v) => (v < 0 ? '−' : '') + 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR');
@@ -19,6 +19,8 @@
     outra: { nome: 'Outra renda', dica: 'Valor líquido, o que de fato entra.' }
   };
   let reserva = 'completa';
+  let fracSobra = 0.30;        /* fração da sobra destinada ao risco: mantida quando a sobra muda */
+  let stopManual = false;      /* true quando a pessoa digitou o stop nesta página */
   let seqExtra = 0;
 
   function addRenda(tipo, valor, pct) {
@@ -49,8 +51,8 @@
     const pat = num('pat', 0), cdi = num('cdi', 0), ir = parseFloat($('ir').value);
     const taxaMes = Math.pow(1 + cdi / 100, 1 / 12) - 1;
     const rendAplic = pat * taxaMes * (1 - ir / 100);
-    const pctSobra = num('pctSobra', 0);
-    const daSobra = Math.max(0, sobra) * pctSobra / 100;
+    const daSobra = Math.max(0, sobra) * fracSobra;
+    const pctSobra = Math.round(fracSobra * 100);
     const extras = [...$('extras').children].map((d) => {
       const id = d.dataset.id;
       const tipo = $('xt' + id).value, valor = num('xv' + id, 0), pct = num('xp' + id, 0);
@@ -59,7 +61,7 @@
     const daExtras = extras.reduce((a, x) => a + x.risco, 0);
     const saque = num('saque', 0);
     const verde = rendAplic + daSobra + daExtras;
-    const stop = num('stop', 100), pts = num('pts', 190000);
+    const stop = Math.max(10, num('stop', 100)), pts = num('pts', 190000);
     return { renda, contas, sobra, pat, rendAplic, pctSobra, daSobra, extras, daExtras, saque,
              rend: verde, comp: saque, orc: verde + saque, stop, noc: pts * 0.20 };
   }
@@ -69,12 +71,12 @@
     const msgs = [];
     let cor = 'verde';
     if (b.sobra < 0) { cor = 'vermelho'; msgs.push('Suas contas (' + brl(b.contas) + ') são maiores que a renda (' + brl(b.renda) + '). Feche o mês no azul antes de arriscar.'); }
-    if (b.saque > 0 && reserva === 'nao') { cor = 'vermelho'; msgs.push('Você está sacando ' + brl(b.saque) + ' do que guardou, sem ter reserva de emergência.'); }
+    if (b.saque > 0 && reserva === 'nao') { cor = 'vermelho'; msgs.push('Você está retirando ' + brl(b.saque) + ' do patrimônio, sem ter reserva de emergência. Má decisão.'); }
     if (reserva !== 'completa') {
       if (cor !== 'vermelho') cor = 'ambar';
       msgs.push(reserva === 'nao' ? 'Monte uma reserva de emergência antes de aumentar o risco. Até lá, mantenha o orçamento pequeno.' : 'Complete a reserva de emergência. Enquanto isso, prefira um orçamento menor.');
     }
-    if (b.saque > 0 && reserva !== 'nao') { if (cor !== 'vermelho') cor = 'ambar'; msgs.push(brl(b.saque) + ' saem do que já estava guardado: essa parte não tem paraquedas.'); }
+    if (b.saque > 0 && reserva !== 'nao') { if (cor !== 'vermelho') cor = 'ambar'; msgs.push(brl(b.saque) + ' retirados do patrimônio: má decisão, essa parte não tem paraquedas.'); }
     const tit = cor === 'verde' ? 'Sinal verde' : cor === 'ambar' ? 'Sinal amarelo: atenção' : 'Sinal vermelho: pare e reorganize';
     if (cor === 'verde') msgs.push('Contas cobertas, reserva completa e risco só com dinheiro novo do mês.');
     return { cor, tit, msgs };
@@ -152,12 +154,32 @@
     $('levChart').innerHTML = out;
   }
 
+  /* Régua da sobra: vai de R$ 0 até a sobra calculada no passo 1; balão mostra "R$ X · Y%" */
+  function atualizarRegua(b) {
+    const r = $('valSobra');
+    const max = Math.max(0, Math.round(b.sobra));
+    r.max = String(max || 0);
+    r.step = max > 5000 ? '50' : '10';
+    r.disabled = max <= 0;
+    if (document.activeElement !== r || r.dataset.arrastando !== '1') r.value = String(Math.round(max * fracSobra));
+    $('reguaFim').textContent = brl(max);
+    const frac = max > 0 ? Number(r.value) / max : 0;
+    const balao = $('sobraBalao');
+    balao.textContent = max > 0 ? brl(Number(r.value)) + ' · ' + Math.round(frac * 100) + '%' : 'Sem sobra';
+    balao.style.left = 'calc(' + (frac * 100) + '% + ' + (11 - frac * 22) + 'px)';
+    $('sobraHint').textContent = max > 0 ? 'É por aqui que entram salário, pró-labore e aluguel: pela sobra, depois das contas.' : 'Sem sobra no mês: nada desta parte pode ir para o risco.';
+  }
+  /* Stop vindo do Gerenciamento (risco por operação), se a pessoa já usou aquela página */
+  function stopGer() {
+    const d = window.PlanoCartao ? window.PlanoCartao.ler() : {};
+    return d && d.ger && d.ger.risco > 0 ? d.ger.risco : null;
+  }
+
   function render() {
     const b = base();
-    $('stopOut').textContent = brl(b.stop);
     const orc = b.orc;
     const ks = $('kSobra'); ks.textContent = brl(b.sobra); ks.className = 'num' + (b.sobra < 0 ? ' neg' : '');
-    $('pctSobraOut').textContent = b.pctSobra + '%';
+    atualizarRegua(b);
     document.querySelectorAll('#extras input[type="range"]').forEach((r) => { const o = $('xpo' + r.id.slice(2)); if (o) o.textContent = r.value + '%'; });
     const sem = semaforo(b);
     $('semaforo').className = 'semaforo ' + sem.cor;
@@ -167,7 +189,7 @@
     if (b.rendAplic > 0) comp.push(['Rendimento de aplicação', b.rendAplic]);
     if (b.daSobra > 0) comp.push([b.pctSobra + '% da sobra do mês', b.daSobra]);
     b.extras.forEach((x) => { if (x.risco > 0) comp.push([x.pct + '% de ' + x.nome.toLowerCase(), x.risco]); });
-    if (b.saque > 0) comp.push(['Saque do patrimônio (sem paraquedas)', b.saque]);
+    if (b.saque > 0) comp.push(['Retirado do patrimônio (má decisão)', b.saque]);
     $('composicao').innerHTML = comp.map((c) => '<li><span>' + c[0] + '</span><b>' + brl(c[1]) + '</b></li>').join('');
     $('bbG').style.flexGrow = Math.max(b.rend, 0.0001);
     $('bbA').style.flexGrow = Math.max(b.comp, 0.0001);
@@ -178,9 +200,15 @@
     $('kOrc').textContent = brl(orc);
     $('kProt').textContent = orc > 0 ? Math.round(100 * b.rend / orc) + '% com paraquedas' : '—';
 
-    const diasRaw = b.stop > 0 ? Math.floor(orc / b.stop) : 0;
+    const stopUso = orc > 0 ? Math.min(b.stop, orc) : b.stop;
+    const sh = $('stopHint');
+    if (orc > 0 && b.stop > orc) { sh.textContent = 'Seu stop não pode passar do orçamento do mês (' + brl(orc) + '). Usando ' + brl(orc) + ' = 1 dia.'; sh.classList.add('neg'); }
+    else { sh.classList.remove('neg'); sh.textContent = stopGer() !== null && !stopManual ? 'Puxado do Gerenciamento (risco por operação). Faixa ideal: R$ 100 a R$ 200.' : 'Faixa ideal: R$ 100 a R$ 200. No Gerenciamento ele aparece como risco por operação.'; }
+    const g = stopGer(); $('btnStopGer').hidden = !(g !== null && stopManual && Math.round(g) !== Math.round(b.stop));
+    if (g !== null) $('btnStopGer').textContent = 'Usar o do Gerenciamento (' + brl(g) + ')';
+    const diasRaw = stopUso > 0 ? Math.floor(orc / stopUso + 1e-9) : 0;
     const dias = Math.min(20, diasRaw);
-    const stopEf = diasRaw > 20 ? orc / 20 : b.stop;
+    const stopEf = diasRaw > 20 ? orc / 20 : stopUso;
     $('kDias').textContent = dias + (dias === 1 ? ' dia' : ' dias');
     $('kStopEf').textContent = diasRaw > 20 ? 'stop sobe para ' + brl(stopEf) + '/dia' : 'stop de ' + brl(stopEf) + '/dia';
     $('kPts').textContent = Math.round(stopEf / 0.20).toLocaleString('pt-BR') + ' pts';
@@ -209,6 +237,16 @@
   }
 
   $('form').addEventListener('input', render);
+  ['stop', 'pts'].forEach((id) => $(id).addEventListener('input', () => { if (id === 'stop') stopManual = true; render(); }));
+  $('valSobra').addEventListener('input', (e) => {
+    const max = Number(e.target.max) || 0;
+    e.target.dataset.arrastando = '1';
+    fracSobra = max > 0 ? Number(e.target.value) / max : fracSobra;
+    render();
+  });
+  $('valSobra').addEventListener('change', (e) => { e.target.dataset.arrastando = '0'; });
+  $('btnStopGer').addEventListener('click', () => { const g = stopGer(); if (g !== null) { $('stop').value = Math.round(g); stopManual = false; render(); } });
+  (function () { const g = stopGer(); if (g !== null) $('stop').value = Math.round(g); })();
   $('form').addEventListener('change', render);
   $('btnAddRenda').addEventListener('click', () => { const d = addRenda('aluguel', 1000, 20); d.querySelector('select').focus(); render(); });
   document.querySelectorAll('#reserva button').forEach((btn) => btn.addEventListener('click', () => {

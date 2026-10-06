@@ -365,7 +365,7 @@ fieldset.passo { border: 0; margin: 0; min-width: 0 }
 .fonte { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 12px; background: var(--bg) }
 .fonte-tit { font-weight: 800; font-size: 15px }
 .fonte-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px }
-.fonte-saque { background: transparent; border: 2px dashed var(--amber) }
+.fonte-saque { background: var(--red-soft); border: 2px solid var(--red) }
 .fonte-extra .fonte-top { display: flex; gap: 8px; align-items: center }
 .fonte-extra .fonte-top select { flex: 1 }
 .btn-rem { width: 44px; height: 44px; flex: 0 0 auto; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; font-size: 20px; line-height: 1 }
@@ -396,3 +396,25 @@ fieldset.passo { border: 0; margin: 0; min-width: 0 }
 .btn-cartao:disabled { opacity: .7; cursor: wait }
 .cartao-prev { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; border-radius: 18px; background: var(--surface) }
 .cartao-img { width: 100%; max-width: 432px; height: auto; border-radius: 12px; box-shadow: 0 8px 28px rgba(15,34,53,.18) }
+
+/* Régua da sobra (R$ 0 até a sobra), com balão de valor */
+.regua { position: relative; padding-top: 34px }
+.regua input[type="range"] { display: block; width: 100%; margin: 0 }
+.regua-balao { position: absolute; top: 0; transform: translateX(-50%); background: var(--navy); color: var(--on-navy); font-size: 14px; font-weight: 700; padding: 4px 10px; border-radius: 8px; white-space: nowrap; pointer-events: none }
+.regua-balao::after { content: ""; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); border: 6px solid transparent; border-bottom: 0; border-top-color: var(--navy) }
+.regua-pontas { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 2px }
+.regua input:disabled { opacity: .5 }
+
+/* Retirado do patrimônio: má decisão */
+.saque-top { display: flex; gap: 12px; align-items: flex-start; color: var(--red) }
+.saque-top svg { flex: 0 0 auto; margin-top: 2px }
+.saque-top strong { display: block; font-family: var(--display); font-weight: 900; font-size: 17px; line-height: 1.2 }
+.saque-top span { display: block; font-size: 14px; font-weight: 600; margin-top: 2px }
+.fonte-saque .hint { color: var(--ink) }
+.bb-amber { background: var(--red); color: #FFFFFF }
+
+/* Ajustes da operação dentro do passo 3 */
+.ajustes { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 12px; background: var(--bg) }
+.btn-link { align-self: flex-start; background: none; border: 0; padding: 4px 0; min-height: 32px; font: inherit; font-size: 14px; font-weight: 700; color: var(--green); cursor: pointer; text-decoration: underline }
+.hint.neg { color: var(--red); font-weight: 600 }
+.pq-result { position: static }
