@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Paraquedas do Trader Indisciplinado</title>
-<meta name="description" content="Arrisque só o rendimento do mês. Calcule o stop diário, os dias de operação e a alavancagem no day trade.">
+<meta name="description" content="Arrisque só parte da renda que entra no mês. Calcule o stop diário, os dias de operação e a alavancagem no day trade.">
 <meta name="theme-color" content="#0F2235">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <!-- Prévia de link (WhatsApp, LinkedIn, Instagram) -->
@@ -12,7 +12,7 @@
 <meta property="og:locale" content="pt_BR">
 <meta property="og:site_name" content="Paraquedas do Trader Indisciplinado">
 <meta property="og:title" content="Paraquedas do Trader Indisciplinado">
-<meta property="og:description" content="Arrisque só o rendimento do mês. Calcule o stop diário, os dias de operação e a alavancagem no day trade.">
+<meta property="og:description" content="Arrisque só parte da renda que entra no mês. Calcule o stop diário, os dias de operação e a alavancagem no day trade.">
 <meta property="og:url" content="https://theceji.github.io/paraquedas/">
 <meta property="og:image" content="https://theceji.github.io/paraquedas/assets/og-cover.png">
 <meta property="og:image:width" content="1200">
@@ -44,7 +44,7 @@
     <div class="hero-text">
       <span class="eyebrow">Plano de risco · Day trade</span>
       <h1>Paraquedas do Trader <em>Indisciplinado</em></h1>
-      <p>Arrisque só o rendimento do mês. Coloque seus números e veja quanto pode perder por dia, quantos dias dá para operar e como o plano evolui.</p>
+      <p>Arrisque só parte da renda que entra no mês. O que já está guardado nunca entra no jogo.</p>
     </div>
     <button type="button" class="drop-btn" id="dropBtn" aria-label="Ver de novo o paraquedas pousando na pilha de dinheiro">
       <svg class="drop-scene play" id="dropScene" viewBox="0 0 296 350" role="img" aria-label="Paraquedas desce com um bloco de dinheiro e pousa sobre uma pilha de blocos">
@@ -74,50 +74,120 @@
   <span class="eyebrow">1 · Seus números</span>
   <h2 id="t-calc">Calcule o seu paraquedas</h2>
   <p class="lead">Valores de exemplo já preenchidos. Mude qualquer campo e tudo recalcula.</p>
-  <div class="grid2">
-    <form class="panel" id="form" autocomplete="off">
-      <div class="field">
-        <label for="pat">Patrimônio aplicado no CDI (R$)</label>
-        <input type="number" id="pat" min="0" step="1000" value="50000" inputmode="numeric">
-        <span class="hint">Use 0 se não tem patrimônio e vai arriscar só um valor fixo.</span>
-      </div>
-      <div class="field">
-        <label for="cdi">CDI ao ano (%)</label>
-        <input type="number" id="cdi" min="0" max="50" step="0.05" value="13.65" inputmode="decimal">
-        <span class="hint">Selic em 13,75% desde 16/09/2026. CDI fica ~0,10 abaixo.</span>
-      </div>
-      <div class="field">
-        <label for="ir">Imposto de renda do CDB</label>
-        <select id="ir">
-          <option value="22.5">22,5% (até 6 meses)</option>
-          <option value="20">20% (6 a 12 meses)</option>
-          <option value="17.5">17,5% (1 a 2 anos)</option>
-          <option value="15" selected>15% (mais de 2 anos)</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="comp">Complemento do bolso por mês (R$)</label>
-        <input type="number" id="comp" min="0" step="50" value="550" inputmode="numeric">
-        <span class="hint">Dinheiro novo, sem paraquedas. Use 0 para arriscar só o rendimento.</span>
-      </div>
-      <div class="field">
-        <label for="stop">Stop diário <output id="stopOut" for="stop">R$ 100</output></label>
-        <input type="range" id="stop" min="50" max="300" step="10" value="100">
-        <span class="hint">Faixa ideal: R$ 100 a R$ 200.</span>
-      </div>
-      <div class="field">
-        <label for="pts">Ibovespa futuro (pontos)</label>
-        <input type="number" id="pts" min="1000" step="1000" value="190000" inputmode="numeric">
-        <span class="hint">Usado para o valor do minicontrato WIN (pontos × R$ 0,20).</span>
-      </div>
+  <ol class="degraus" aria-label="Ordem de uso do dinheiro">
+    <li class="dg-contas">Contas</li>
+    <li class="dg-reserva">Reserva</li>
+    <li class="dg-investir">Investir</li>
+    <li class="dg-risco">Risco</li>
+  </ol>
+  <p class="foot degraus-nota">O trade é o último degrau, nunca o primeiro.</p>
+
+  <div class="grid2 pq-grid">
+    <form class="pq-form" id="form" autocomplete="off">
+
+      <fieldset class="panel passo">
+        <legend><span class="passo-n">1</span>Suas obrigações</legend>
+        <div class="field">
+          <label for="renda">Renda líquida do mês (R$)</label>
+          <input type="number" id="renda" min="0" step="100" value="6000" inputmode="numeric">
+          <span class="hint">O que cai na conta para pagar a vida: salário, pró-labore, aluguel. Sem 13º e sem rendimento de aplicação.</span>
+        </div>
+        <div class="field">
+          <label for="contas">Contas do mês (R$)</label>
+          <input type="number" id="contas" min="0" step="100" value="4800" inputmode="numeric">
+          <span class="hint">Moradia, alimentação, transporte, escola, parcelas e dívidas.</span>
+        </div>
+        <div class="field">
+          <span class="lbl" id="resLbl">Reserva de emergência</span>
+          <div class="seg" role="group" aria-labelledby="resLbl" id="reserva">
+            <button type="button" data-v="nao" aria-pressed="false">Não tenho</button>
+            <button type="button" data-v="parte" aria-pressed="false">Tenho parte</button>
+            <button type="button" data-v="completa" aria-pressed="true">Completa</button>
+          </div>
+          <span class="hint">Completa = 6 meses ou mais das suas contas guardados.</span>
+        </div>
+        <div class="sobra"><span>Sobra do mês</span><strong class="num" id="kSobra">—</strong></div>
+        <details class="porque">
+          <summary>Por que isso importa?</summary>
+          <ul>
+            <li>Conta atrasada cobra juros maiores que qualquer ganho de trade.</li>
+            <li>Sem reserva, uma emergência obriga você a operar desesperado ou a sacar o que perdeu.</li>
+            <li>Só a sobra pode ser perdida sem mudar a sua vida. O resto já tem dono.</li>
+          </ul>
+        </details>
+      </fieldset>
+
+      <fieldset class="panel passo">
+        <legend><span class="passo-n">2</span>Quanto vai para o risco</legend>
+        <div class="fonte">
+          <span class="fonte-tit">Rendimento de aplicação</span>
+          <div class="fonte-grid">
+            <div class="field">
+              <label for="pat">Patrimônio aplicado (R$)</label>
+              <input type="number" id="pat" min="0" step="1000" value="50000" inputmode="numeric">
+            </div>
+            <div class="field">
+              <label for="cdi">CDI ao ano (%)</label>
+              <input type="number" id="cdi" min="0" max="50" step="0.05" value="13.65" inputmode="decimal">
+            </div>
+            <div class="field">
+              <label for="ir">IR do CDB</label>
+              <select id="ir">
+                <option value="22.5">22,5% (até 6 meses)</option>
+                <option value="20">20% (6 a 12 meses)</option>
+                <option value="17.5">17,5% (1 a 2 anos)</option>
+                <option value="15" selected>15% (mais de 2 anos)</option>
+              </select>
+            </div>
+          </div>
+          <span class="hint">Use 0 se não tem aplicação. Selic em 13,75% desde 16/09/2026; o CDI fica ~0,10 abaixo.</span>
+        </div>
+        <div class="fonte">
+          <div class="field">
+            <label for="pctSobra">Parte da sobra do mês <output id="pctSobraOut" for="pctSobra">30%</output></label>
+            <input type="range" id="pctSobra" min="0" max="100" step="5" value="30">
+            <span class="hint">É por aqui que entram salário, pró-labore e aluguel: pela sobra, depois das contas.</span>
+          </div>
+        </div>
+        <div id="extras"></div>
+        <button type="button" class="btn btn-add" id="btnAddRenda">+ Adicionar outra renda</button>
+        <div class="fonte fonte-saque">
+          <div class="field">
+            <label for="saque">Saque do patrimônio ou da reserva (R$)</label>
+            <input type="number" id="saque" min="0" step="50" value="0" inputmode="numeric">
+            <span class="hint">Dinheiro que já estava guardado. Essa parte não tem paraquedas.</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="panel passo passo-op">
+        <legend>Ajustes da operação</legend>
+        <div class="fonte-grid">
+          <div class="field">
+            <label for="stop">Stop diário <output id="stopOut" for="stop">R$ 100</output></label>
+            <input type="range" id="stop" min="50" max="300" step="10" value="100">
+            <span class="hint">Faixa ideal: R$ 100 a R$ 200.</span>
+          </div>
+          <div class="field">
+            <label for="pts">Ibovespa futuro (pontos)</label>
+            <input type="number" id="pts" min="1000" step="1000" value="190000" inputmode="numeric">
+            <span class="hint">Valor do WIN = pontos × R$ 0,20.</span>
+          </div>
+        </div>
+      </fieldset>
     </form>
 
-    <div class="panel" aria-live="polite">
-      <span class="eyebrow">Orçamento de risco do mês</span>
-      <div class="budget-bar" id="bbar">
-        <div class="bb-green" id="bbG"><span class="bb-big num" id="bbGv">R$ 0</span><span class="bb-small">rendimento · com paraquedas</span></div>
-        <div class="bb-amber" id="bbA"><span class="bb-big num" id="bbAv">R$ 0</span><span class="bb-small">do bolso · sem paraquedas</span></div>
+    <div class="panel passo pq-result" aria-live="polite">
+      <span class="passo-tit"><span class="passo-n">3</span>Seu paraquedas</span>
+      <div class="semaforo" id="semaforo">
+        <span class="luz" aria-hidden="true"></span>
+        <div><strong id="semTit">—</strong><ul id="semMsgs"></ul></div>
       </div>
+      <div class="budget-bar" id="bbar">
+        <div class="bb-green" id="bbG"><span class="bb-big num" id="bbGv">R$ 0</span><span class="bb-small">renda do mês · com paraquedas</span></div>
+        <div class="bb-amber" id="bbA"><span class="bb-big num" id="bbAv">R$ 0</span><span class="bb-small">saque · sem paraquedas</span></div>
+      </div>
+      <ul class="composicao" id="composicao"></ul>
       <div class="kpis">
         <div class="kpi"><span>Orçamento do mês</span><strong class="num" id="kOrc">—</strong><small id="kProt">—</small></div>
         <div class="kpi"><span>Dias de operação</span><strong class="num pos" id="kDias">—</strong><small id="kStopEf">—</small></div>
@@ -129,8 +199,13 @@
         <div class="days" id="days" aria-hidden="true"></div>
       </div>
       <p class="warn" id="warn" hidden></p>
+      <div class="cartao-acao">
+        <button type="button" class="btn btn-cartao" id="btnCartao">Gerar meu cartão do plano</button>
+        <span class="hint">Junta os números desta página e do Gerenciamento numa imagem para salvar ou imprimir. Os números ficam só neste navegador.</span>
+      </div>
     </div>
   </div>
+  <div class="cartao-prev" id="cartaoPrev" hidden></div>
 </section>
 
 <section class="section" aria-labelledby="t-pior">
@@ -138,10 +213,10 @@
   <h2 id="t-pior">Perdeu todos os dias do mês?</h2>
   <div class="tiles">
     <div class="tile"><span>Patrimônio antes e depois</span><strong class="num" id="pPat">—</strong></div>
-    <div class="tile"><span>Rendimento que deixou de entrar</span><strong class="num pos" id="pRend">—</strong></div>
-    <div class="tile"><span>Perda real (do bolso)</span><strong class="num amb" id="pComp">—</strong></div>
+    <div class="tile"><span>Renda do mês que deixou de ser guardada</span><strong class="num pos" id="pRend">—</strong></div>
+    <div class="tile"><span>Perda real (saque do patrimônio)</span><strong class="num amb" id="pComp">—</strong></div>
   </div>
-  <p class="lead">O patrimônio fica no zero a zero. A única perda de verdade é o complemento que saiu do seu bolso.</p>
+  <p class="lead" id="pTxt">O patrimônio fica no zero a zero: você só deixa de guardar a renda nova deste mês. A perda de verdade é o que for sacado do que já estava guardado.</p>
 </section>
 
 <section class="section" aria-labelledby="t-sim">
@@ -164,13 +239,13 @@
     <div class="tile"><span>Resultado do ano</span><strong class="num" id="sRes">—</strong></div>
     <div class="tile"><span>Guardado no patrimônio</span><strong class="num" id="sGuard">—</strong></div>
     <div class="tile"><span>Orçamento jan → dez</span><strong class="num" id="sOrc">—</strong></div>
-    <div class="tile"><span>Perdido do bolso no ano</span><strong class="num amb" id="sComp">—</strong></div>
+    <div class="tile"><span>Saque do patrimônio perdido no ano</span><strong class="num amb" id="sComp">—</strong></div>
   </div>
   <div class="chart-box">
     <div class="legend"><span style="--c: var(--green)">Alavancagem de 1 WIN sobre o orçamento</span></div>
     <svg id="levChart" viewBox="0 0 900 240" role="img" aria-label="Alavancagem caindo conforme o orçamento cresce"></svg>
   </div>
-  <p class="foot">Exemplo ilustrativo. Não é promessa de retorno: o plano limita a perda, mas não cria vantagem. Sem uma estratégia com resultado positivo, você apenas entrega o rendimento todo mês.</p>
+  <p class="foot">Exemplo ilustrativo. Não é promessa de retorno: o plano limita a perda, mas não cria vantagem. Sem uma estratégia com resultado positivo, você apenas entrega a renda destinada ao risco todo mês.</p>
 </section>
 
 <section class="section" aria-labelledby="t-reg">
@@ -187,6 +262,7 @@
 
 </main>
 
+<script src="assets/cartao.js"></script>
 <script src="assets/paraquedas.js"></script>
 <script>
 (function () {

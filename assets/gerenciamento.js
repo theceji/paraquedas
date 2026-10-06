@@ -11,6 +11,7 @@
   const STOPS_WIN = [250, 300, 350, 400, 450, 500];
   const STOPS_WDO = [10, 11, 11.5, 12, 15, 20];
   const ACERTOS = [25, 30, 35, 45, 50, 75, 80];
+  let ultimo = null;
 
   const brl = (v) => (v < 0 ? '−' : '') + 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const brl0 = (v) => (v < 0 ? '−' : '') + 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR');
@@ -154,6 +155,8 @@
     $('kMeta').textContent = brl(r.metaR);
     $('kMetaPct').textContent = p.metaPct.toLocaleString('pt-BR') + '% sobre ' + brl0(p.cap);
     $('kStops').textContent = r.risco > 0 ? String(Math.floor(r.dd / r.risco + 1e-9)) : '—';
+    ultimo = { pagina: 'ger', dados: { cap: p.cap, metaPct: p.metaPct, riscoPct: p.riscoPct, ddPct: p.ddPct, risco: r.risco, dd: r.dd, metaR: r.metaR, stopsWin: p.stopsWin, stopsWdo: p.stopsWdo } };
+    if (window.PlanoCartao) window.PlanoCartao.salvar('ger', ultimo.dados);
 
     let algumZero = false;
     r.win.forEach((x, i) => { const c = $('wc' + i); c.textContent = x.c; c.classList.toggle('zero', x.c === 0); $('wf' + i).textContent = brl(x.fin); if (x.c === 0) algumZero = true; });
@@ -278,6 +281,7 @@
   }));
   $('btnSortear').addEventListener('click', () => { sortearOrdem(); if (cenarioAtivo() === null) $('cenAcerto').value = '35'; aplicarCenario(); });
   $('btnLimpar').addEventListener('click', limpar);
+  if (window.PlanoCartao) window.PlanoCartao.ligar('btnCartao', () => ultimo);
   sortearOrdem();
   aplicarCenario();
 })();

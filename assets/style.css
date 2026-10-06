@@ -336,3 +336,63 @@ html { scrollbar-gutter: stable }
   .hero .drop-btn svg, .hero-art svg { width: 180px }
 }
 @media (max-width: 640px) { .hero-in { height: auto } .hero-text { min-height: 300px } }
+
+/* Paraquedas em 3 passos */
+.degraus { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; counter-reset: dg }
+.degraus li { counter-increment: dg; position: relative; text-align: center; font-weight: 800; font-family: var(--display); font-size: 15px; padding: 10px 6px; border-radius: 10px }
+.degraus li::before { content: counter(dg) " · "; font-weight: 700; opacity: .75 }
+.dg-contas { background: var(--red-soft); color: var(--red) }
+.dg-reserva { background: #FBEFD6; color: #7A4A00 }
+.dg-investir { background: #DCE9F6; color: #1F5F99 }
+.dg-risco { background: var(--green-soft); color: var(--green) }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dg-reserva { background: #3A2E14; color: #F2B544 } :root:not([data-theme="light"]) .dg-investir { background: #18324D; color: #7DB6EA } }
+:root[data-theme="dark"] .dg-reserva { background: #3A2E14; color: #F2B544 }
+:root[data-theme="dark"] .dg-investir { background: #18324D; color: #7DB6EA }
+.degraus-nota { margin-top: -8px }
+
+.pq-grid { align-items: start }
+.pq-form { display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+fieldset.passo { border: 0; margin: 0; min-width: 0 }
+.passo legend, .passo-tit { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 20px; padding: 0; margin-bottom: 4px; float: left; width: 100% }
+.passo legend + * { clear: both }
+.passo-n { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: var(--on-navy); font-size: 15px; flex: 0 0 auto }
+.passo-op legend { font-size: 16px; color: var(--muted) }
+.sobra { display: flex; justify-content: space-between; align-items: baseline; border-top: 2px solid var(--line); padding-top: 10px; font-weight: 700 }
+.sobra strong { font-family: var(--display); font-weight: 900; font-size: 24px }
+.sobra strong.neg { color: var(--red) }
+.porque summary { cursor: pointer; font-weight: 700; color: var(--green); font-size: 15px; min-height: 32px; display: flex; align-items: center }
+.porque ul { margin: 6px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; display: flex; flex-direction: column; gap: 4px }
+.fonte { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 12px; background: var(--bg) }
+.fonte-tit { font-weight: 800; font-size: 15px }
+.fonte-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px }
+.fonte-saque { background: transparent; border: 2px dashed var(--amber) }
+.fonte-extra .fonte-top { display: flex; gap: 8px; align-items: center }
+.fonte-extra .fonte-top select { flex: 1 }
+.btn-rem { width: 44px; height: 44px; flex: 0 0 auto; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; font-size: 20px; line-height: 1 }
+.btn-rem:hover { border-color: var(--red); color: var(--red) }
+.btn-add { align-self: flex-start; border-style: dashed }
+.pq-result { position: sticky; top: 72px }
+.semaforo { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 14px; background: var(--bg) }
+.semaforo .luz { width: 18px; height: 18px; border-radius: 50%; margin-top: 3px; flex: 0 0 auto; background: var(--muted) }
+.semaforo strong { font-family: var(--display); font-weight: 900; font-size: 18px }
+.semaforo ul { margin: 4px 0 0; padding-left: 18px; font-size: 14.5px; display: flex; flex-direction: column; gap: 2px }
+.semaforo.verde { background: var(--green-soft) } .semaforo.verde .luz { background: var(--green) } .semaforo.verde strong { color: var(--green) }
+.semaforo.ambar { background: #FBEFD6 } .semaforo.ambar .luz { background: var(--amber) } .semaforo.ambar strong { color: #7A4A00 }
+.semaforo.vermelho { background: var(--red-soft) } .semaforo.vermelho .luz { background: var(--red) } .semaforo.vermelho strong { color: var(--red) }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .semaforo.ambar { background: #3A2E14 } :root:not([data-theme="light"]) .semaforo.ambar strong { color: #F2B544 } }
+:root[data-theme="dark"] .semaforo.ambar { background: #3A2E14 }
+:root[data-theme="dark"] .semaforo.ambar strong { color: #F2B544 }
+.composicao { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 14px }
+.composicao li { display: flex; justify-content: space-between; gap: 8px; color: var(--muted) }
+.composicao li b { color: var(--ink); font-variant-numeric: tabular-nums }
+@media (max-width: 980px) { .pq-result { position: static } }
+@media (max-width: 520px) { .degraus { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+.hint { font-size: 13px; color: var(--muted) }
+
+/* Cartão do plano */
+.cartao-acao { display: flex; flex-direction: column; gap: 6px; border-top: 2px solid var(--line); padding-top: 14px }
+.btn-cartao { background: var(--navy); color: var(--on-navy); border-color: var(--navy); font-size: 16px }
+.btn-cartao:hover { border-color: var(--green) }
+.btn-cartao:disabled { opacity: .7; cursor: wait }
+.cartao-prev { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; border-radius: 18px; background: var(--surface) }
+.cartao-img { width: 100%; max-width: 432px; height: auto; border-radius: 12px; box-shadow: 0 8px 28px rgba(15,34,53,.18) }

@@ -135,6 +135,10 @@
         <div class="kpi"><span>Meta do mês</span><strong class="num pos" id="kMeta">—</strong><small id="kMetaPct">—</small></div>
         <div class="kpi"><span>Stops cheios até o alerta</span><strong class="num" id="kStops">—</strong><small>perdas seguidas do tamanho do risco</small></div>
       </div>
+      <div class="cartao-acao">
+        <button type="button" class="btn btn-cartao" id="btnCartao">Gerar meu cartão do plano</button>
+        <span class="hint">Junta estes números com os da página Paraquedas numa imagem para salvar ou imprimir.</span>
+      </div>
     </div>
     <div class="panel">
       <h3>Contratos por tamanho de stop</h3>
@@ -158,12 +162,13 @@
       <p class="warn" id="warnCtr" hidden>Em vermelho: o risco não paga nem 1 contrato com esse stop.</p>
     </div>
   </div>
+  <div class="cartao-prev" id="cartaoPrev" hidden></div>
 </section>
 
 <section class="section" aria-labelledby="t-dia">
   <span class="eyebrow">3 · Simulação</span>
   <h2 id="t-dia">Diário de 20 dias</h2>
-  <p class="lead">Escolha um percentual de acerto e veja o mês com stop respeitado. Ou digite seus próprios resultados (sinal de menos para perdas). Nada fica salvo.</p>
+  <p class="lead">Escolha um percentual de acerto e veja o mês com stop respeitado. Ou digite seus próprios resultados (sinal de menos para perdas). Os resultados do diário não ficam salvos.</p>
   <div class="panel cenarios">
     <div class="cen-ctrl">
       <div class="field">
@@ -231,6 +236,7 @@
 </section>
 
 </main>
+<script src="assets/cartao.js"></script>
 <script src="assets/gerenciamento.js"></script>
 </body>
 </html>
