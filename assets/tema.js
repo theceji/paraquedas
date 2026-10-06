@@ -9,32 +9,13 @@
     if (salvo === 'dark' || salvo === 'light') raiz.setAttribute('data-theme', salvo);
   } catch (e) { /* armazenamento bloqueado: segue o sistema */ }
 
-  var movimentoSalvo = null;
-  try { movimentoSalvo = localStorage.getItem('paraquedas-movimento'); } catch (e) { /* segue o sistema */ }
+  // Sem botão de pausa. A preferência de acessibilidade do sistema continua automática.
   var movimentoSistema = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
   function atualizarMovimento() {
-    var reduzido = movimentoSalvo ? movimentoSalvo === 'reduced' : !!(movimentoSistema && movimentoSistema.matches);
-    raiz.setAttribute('data-motion', reduzido ? 'reduced' : 'full');
-    var botao = document.getElementById('btnMovimento');
-    if (botao) {
-      botao.setAttribute('aria-pressed', String(reduzido));
-      botao.setAttribute('aria-label', reduzido ? 'Ativar animações' : 'Reduzir movimento');
-      botao.title = reduzido ? 'Ativar animações' : 'Reduzir movimento';
-    }
-    var cena = document.getElementById('dropBtn');
-    if (cena) { cena.disabled = reduzido; cena.querySelector('.drop-hint').textContent = reduzido ? 'Ilustração estática' : 'Toque para soltar de novo'; }
+    raiz.setAttribute('data-motion', movimentoSistema && movimentoSistema.matches ? 'reduced' : 'full');
   }
   atualizarMovimento();
   if (movimentoSistema && movimentoSistema.addEventListener) movimentoSistema.addEventListener('change', atualizarMovimento);
-  document.addEventListener('DOMContentLoaded', function () {
-    atualizarMovimento();
-    var botao = document.getElementById('btnMovimento');
-    if (botao) botao.addEventListener('click', function () {
-      movimentoSalvo = raiz.getAttribute('data-motion') === 'reduced' ? 'full' : 'reduced';
-      try { localStorage.setItem('paraquedas-movimento', movimentoSalvo); } catch (e) { /* vale nesta página */ }
-      atualizarMovimento();
-    });
-  });
 
   function temaAtual() {
     var t = raiz.getAttribute('data-theme');

@@ -30,21 +30,23 @@
 .scene-caption { fill: var(--entry-muted); font-family: var(--body); font-size: 14px; }
 .scene-grid { fill: none; stroke: var(--entry-line); opacity: .7; stroke-dasharray: 2 6; }
 .capital-line { fill: none; stroke: var(--entry-accent); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
-.avoided-line { fill: none; stroke: #c27873; stroke-width: 2; stroke-dasharray: 3 7; opacity: .3; }
+.avoided-line { fill: none; stroke: #e26767; stroke-width: 3; stroke-dasharray: 1 8; stroke-linecap: round; }
+:root[data-theme="light"] .avoided-line { stroke: #bb3939; }
 .stop-line { stroke: var(--entry-accent); stroke-width: 1.5; opacity: .55; }
-.limit-parachute { color: var(--entry-accent); fill: var(--entry-accent); transform-origin: 310px 239px; }
+.limit-parachute { color: var(--entry-accent); fill: var(--entry-accent);  }
 .limit-marker { fill: var(--entry-accent); color: var(--entry-accent); }
 .stop-tag { fill: var(--entry-accent); }
 .stop-tag-text { font: 700 11px var(--body); fill: var(--entry-bg); }
 .reserve-caption { color: var(--entry-accent); }
 .reserve-title { fill: var(--entry-accent); font: 700 17px var(--body); }
-.risk-scene.play .capital-line { animation: trace-limit 3.4s .3s ease-out both; }
-.risk-scene.play .limit-parachute { animation: open-limit 3.4s .3s ease-out both; }
-.risk-scene.play .limit-marker { animation: mark-limit 3.4s .3s ease-out both; }
-@keyframes trace-limit { from { stroke-dasharray: 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1; stroke-dashoffset: 0; } }
-@keyframes open-limit { 0%, 45% { opacity: 0; transform: translateY(24px) scale(.65); } 75%, 100% { opacity: 1; transform: none; } }
-@keyframes mark-limit { 0%, 45% { opacity: 0; } 75%, 100% { opacity: 1; } }
-:root[data-motion="reduced"] .capital-line { stroke-dashoffset: 0; }
+.ground-shadow { stroke: var(--entry-accent); opacity: .12; stroke-width: 6; }
+.landing-shadow { fill: var(--entry-accent); opacity: .2; }
+.money-base { fill: #258761; stroke: #124c38; stroke-width: 1; }
+.money-note { fill: #aceac1; stroke: #246748; stroke-width: 1.5; }
+.money-border { fill: none; stroke: #448c61; stroke-width: .8; }
+.money-band { fill: #f4e2a3; stroke: #b79c56; stroke-width: .6; }
+.money-edges { fill: none; stroke: #aceac1; stroke-width: .8; }
+.money-symbol { fill: #235437; font: 700 11px var(--body); }
 .landing-visual figcaption { font-size: 14px; line-height: 1.6; font-weight: 600; }
 .landing-visual figcaption span { font-weight: 400; color: var(--entry-muted); font-size: 12px; }
 .replay { border: 0; color: var(--entry-muted); background: transparent; font: 600 12px var(--body); padding: 10px; min-height: 40px; cursor: pointer; }
