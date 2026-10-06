@@ -131,11 +131,8 @@ td input[type="number"] { min-height: 40px; padding: 6px 10px; text-align: right
 .days i.on { background: var(--green) }
 
 /* Página Gerenciamento: layout largo e horizontal */
-.page-wide .wrap, .page-wide .topbar-in, .page-wide .hero-in { max-width: 1360px }
+.page-wide .wrap { max-width: 1360px }
 .page-wide .wrap { gap: 36px }
-.page-wide .hero { padding: 22px 16px 24px }
-.page-wide .hero h1 { font-size: clamp(30px, 4.5vw, 46px) }
-.page-wide .hero p { font-size: 17px; max-width: 70ch }
 .page-wide .section { gap: 14px }
 .page-wide .section h2 { font-size: clamp(22px, 3vw, 30px) }
 
@@ -262,7 +259,6 @@ table.compact td input[type="number"] { min-height: 36px; padding: 4px 8px; font
 /* Abas grandes na base do topo */
 .hero:has(.tabs) { padding-bottom: 0; margin-bottom: 0 }
 .tabs { max-width: 980px; margin: 32px auto 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end }
-.page-wide .tabs { max-width: 1360px; margin-top: 22px }
 .tab { display: flex; align-items: center; gap: 14px; padding: 18px 20px; min-height: 76px; border-radius: 18px 18px 0 0; text-decoration: none; font-family: var(--body); transition: transform .18s ease, background .18s ease }
 .tab .tab-ico { width: 34px; height: 34px; flex: 0 0 auto }
 .tab-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 }
@@ -309,3 +305,34 @@ table.compact td input[type="number"] { min-height: 36px; padding: 4px 8px; font
   .brand svg { width: 24px; height: 24px }
   .hero .drop-btn svg { width: 150px }
 }
+
+/* Cabeçalho idêntico nas duas páginas: mesma largura, altura e posição das abas */
+html { scrollbar-gutter: stable }
+.hero-in { min-height: 290px }
+.hero-art { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 0 0 auto; color: var(--on-navy-muted) }
+.hero-art svg { width: 230px; height: auto }
+@media (max-width: 640px) {
+  .hero-in { min-height: 480px }
+  .hero-art { align-self: center }
+  .hero-art svg { width: 150px }
+}
+/* Transição suave entre páginas (navegadores com suporte; nos demais, troca normal) */
+@view-transition { navigation: auto }
+.topbar { view-transition-name: topbar }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .28s }
+.hero-text { align-self: flex-start; padding-top: 34px }
+@media (max-width: 640px) { .hero-text { padding-top: 0 } }
+.drop-hint { display: block; line-height: 18px }
+@media (min-width: 641px) and (max-width: 1100px) { .hero-in { min-height: 330px } }
+@media (max-width: 640px) { .hero-in { min-height: 500px } }
+/* Altura fixa do topo: as abas ficam no mesmo lugar nas duas páginas, qualquer que seja o título */
+.hero-in { height: 290px; min-height: 0 }
+@media (min-width: 641px) and (max-width: 1100px) { .hero-in { height: 340px } }
+@media (max-width: 640px) { .hero-in { height: auto; min-height: 0 } .hero-text { min-height: 250px } }
+.hero-in { height: 300px }
+@media (min-width: 641px) and (max-width: 1100px) {
+  .hero-in { height: 340px; flex-wrap: nowrap }
+  .hero-text { flex: 1 1 300px }
+  .hero .drop-btn svg, .hero-art svg { width: 180px }
+}
+@media (max-width: 640px) { .hero-in { height: auto } .hero-text { min-height: 300px } }
