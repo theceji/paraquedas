@@ -3,6 +3,7 @@
   const scene = document.getElementById('riskScene'), btn = document.getElementById('replayRisk');
   if (!scene || !btn) return;
   const line = scene.querySelector('.capital-line'), money = scene.querySelector('.money-descent');
+  const parachute = scene.querySelector('.limit-parachute');
   const continuation = document.getElementById('continuationReveal'), shadow = scene.querySelector('.landing-shadow');
   const length = line.getTotalLength(), fallDuration = 3200, continuationDuration = 1000;
   let frame = 0;
@@ -12,6 +13,10 @@
     line.style.strokeDasharray = '1'; line.style.strokeDashoffset = String(1 - progress);
     continuation.style.strokeDasharray = '1'; continuation.style.strokeDashoffset = String(1 - after);
     shadow.style.opacity = String(.2 * progress);
+    // O velame só recolhe depois do pouso, acomodando-se sobre o pacote.
+    const closing = Math.max(0, Math.min(1, (after - .1) / .7));
+    const fold = closing * closing * (3 - 2 * closing);
+    parachute.setAttribute('transform', 'translate(0 -29) rotate(' + (-8 * fold) + ') scale(' + (1 - .72 * fold) + ' ' + (1 - .94 * fold) + ') translate(0 29)');
   }
   function play() {
     cancelAnimationFrame(frame); draw(0, 0);
