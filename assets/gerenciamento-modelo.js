@@ -5,7 +5,7 @@
   else root.GerenciamentoModelo = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
-  const DEFAULTS = { WIN: [250,300,350,400,450,500], WDO: [10,11,11.5,12,15,20] };
+  const DEFAULTS = { WIN: [100,200,250,300,350,400,450,500,600,700,800,900,1000,1200,1500,1700,2000,2100,2500], WDO: [7,10,12,15,17,25] };
   const POINT = { WIN:20, WDO:1000 }; // centavos por ponto
   const finite = v => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1e9;
   const cents = v => Math.round(v * 100);
@@ -44,26 +44,29 @@
     const activeCount=Math.min(20,entries.length);
     const actual=ledger(entries,b.total,stop,activeCount);
     const eligible=configured&&actual.first===null&&actual.remaining>=stop;
-    const make=(asset,risk)=>(state.stops?.[asset]||DEFAULTS[asset]).slice(0,6).map(p=>{
-      const valid=finite(p)&&p>0&&Math.abs(p/(asset==='WIN'?5:.5)-Math.round(p/(asset==='WIN'?5:.5)))<1e-7;
-      const n=valid&&risk>0?Math.floor(risk/(p*POINT[asset])+1e-9):0;
-      return {p,valid,n,loss:Math.round(n*p*POINT[asset])};
-    });
-    const tables={WIN:make('WIN',eligible?stop:0),WDO:make('WDO',eligible?stop:0)};
-    const baseTables={WIN:make('WIN',configured?stop:0),WDO:make('WDO',configured?stop:0)};
-    const asset=state.selected?.asset==='WDO'?'WDO':'WIN',index=Math.max(0,Math.min(5,state.selected?.index||0));
-    const selected=tables[asset][index],baseSelected=baseTables[asset][index];
-    let message=!confirmed?'Conclua suas respostas para calcular.':b.total<=0?'Sem orçamento disponível. Nenhuma operação pode ser dimensionada.':stop<=0?'Informe um stop financeiro maior que zero.':stop>b.total?'O stop excede o orçamento. Reduza o stop ou reveja suas respostas.':actual.first!==null?'Limite do orçamento atingido no dia '+actual.first+'. Encerre o período.':actual.remaining<stop?'O saldo restante não comporta outro stop completo. Encerre ou revise o período.':!selected?.n?'O stop em pontos escolhido não comporta um contrato. Escolha uma linha válida.':'Limites compatíveis. Uma operação por dia; o stop financeiro também é o limite diário.';
-    return {confirmed,budget:b,stop,days,actual,eligible,tables,baseTables,asset,index,selected,baseSelected,message,
-      target2:(selected?.loss||0)*2,target3:(selected?.loss||0)*3,canExport:eligible&&selected?.n>0};
+    const tables={WIN:contractTable('WIN',stop),WDO:contractTable('WDO',stop)};
+    let message=!confirmed?'Conclua suas respostas para calcular.':b.total<=0?'Sem orçamento disponível. A tabela é apenas uma referência; não há orçamento para operar.':stop<=0?'Informe um stop financeiro maior que zero.':stop>b.total?'O stop excede o orçamento. Reduza o stop ou reveja suas respostas.':actual.first!==null?'Limite do orçamento atingido no dia '+actual.first+'. Encerre o período.':actual.remaining<stop?'O saldo restante não comporta outro stop completo. Encerre ou revise o período.':'Limites compatíveis. Uma operação por dia; o stop financeiro também é o limite diário.';
+    return {confirmed,budget:b,stop,days,actual,eligible,tables,message,
+      target2:stop*2,target3:stop*3,canExport:eligible};
+  }
+  // Tabela informativa: nenhuma linha altera metas, simulações ou emissão.
+  function contractTable(asset,risk){
+    const point=POINT[asset],rows=[];
+    for(const p of DEFAULTS[asset]){const n=Math.floor(risk/(p*point));rows.push({p,n,loss:n*p*point});if(n===0)return rows;}
+    const tick=asset==='WIN'?5:.5,p=(Math.floor(risk/(point*tick))+1)*tick;
+    rows.push({p,n:0,loss:0,terminal:true});return rows;
+  }
+  function simulationContext(model,period='operator'){
+    if(period==='monthly'){const stop=model.stop||35000;return {days:20,stop,budget:{total:stop*20},example:!model.stop};}
+    return {days:model.days,stop:model.stop,budget:{total:model.budget.total},example:false};
   }
   function scenario(model, percent, payoff, order) {
-    const days=model.days,loss=model.baseSelected?.loss||0;
+    const days=model.days,loss=model.stop;
     if(!days||!loss)return [];
     const gains=Math.round(days*percent/100),values=Array(days).fill(-loss);
     let k=0; for(const i of order){if(i>=0&&i<days&&k<gains){values[i]=loss*(payoff==='mix'?(k%2?2:3):Number(payoff));k++;}}
     let total=0,closed=false;
     return values.map(v=>{if(closed)return null;total+=v;if(total<=-model.budget.total||model.budget.total+total<model.stop)closed=true;return v/100;});
   }
-  return {DEFAULTS,POINT,cents,validFinance,budget,ledger,calculate,scenario};
+  return {DEFAULTS,POINT,cents,validFinance,budget,ledger,calculate,contractTable,simulationContext,scenario};
 });

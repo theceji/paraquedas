@@ -24,18 +24,16 @@
     text('Emitido em '+new Date().toLocaleDateString('pt-BR')+' · Uma operação por dia',60,150,23,'#4a5e70');line(174);
     tile(60,194,465,'ORÇAMENTO DO PERÍODO',money(m.budget.total));tile(545,194,475,'STOP FINANCEIRO / LIMITE DIÁRIO',money(m.stop),'#8a3734');
     text(m.days+' dias previstos · saldo após registros: '+money(m.actual.remaining),60,315,25);
-    text('OPERAÇÃO SELECIONADA',60,355,20,'#4a5e70',true);
-    text(m.asset+' · '+num(m.selected.p)+' pontos · '+m.selected.n+' contrato(s)',60,393,33,'#183247',true);
-    text('Perda prevista no stop: '+money(m.selected.loss),60,428,25,'#8a3734');
-    tile(60,449,465,'META MÍNIMA · 2:1',money(m.target2),'#235c47');tile(545,449,475,'META PREFERIDA · 3:1',money(m.target3),'#235c47');
-    text('Alvos em pontos: '+num(m.selected.p*2)+' (2:1) / '+num(m.selected.p*3)+' (3:1)',60,570,24);
-    text('Contratos por tamanho de stop',60,616,29,'#183247',true);
+    tile(60,339,465,'META MÍNIMA · 2:1',money(m.target2),'#235c47');tile(545,339,475,'META PREFERIDA · 3:1',money(m.target3),'#235c47');
+    text('Metas calculadas sobre o stop financeiro.',60,455,22,'#4a5e70');
+    text('Contratos por tamanho de stop',60,497,29,'#183247',true);
+    const rows=Math.max(m.tables.WIN.length,m.tables.WDO.length),rowHeight=Math.min(34,350/rows),font=Math.min(23,rowHeight*.83);
     for(const [asset,a] of [['WIN',60],['WDO',550]]){
-      text(asset+' · '+(asset==='WIN'?'Mini Índice':'Mini Dólar'),a,656,23,'#28577d',true,460);
-      text('STOP (PTS)',a,695,18,'#4a5e70',true);text('CONTR.',a+168,695,18,'#4a5e70',true);text('RISCO',a+295,695,18,'#4a5e70',true);
-      m.tables[asset].forEach((r,i)=>{const y=730+i*34;if(m.asset===asset&&m.index===i){x.fillStyle='#eef6f1';x.fillRect(a-8,y-25,470,32);}text(num(r.p),a,y,23);text(String(r.n),a+178,y,23,'#183247',true);text(money(r.loss),a+295,y,23,'#183247',false,165);});
+      text(asset+' · '+(asset==='WIN'?'Mini Índice':'Mini Dólar'),a,535,23,'#28577d',true,460);
+      text('STOP (PTS)',a,570,18,'#4a5e70',true);text('CONTR.',a+168,570,18,'#4a5e70',true);text('RISCO',a+295,570,18,'#4a5e70',true);
+      m.tables[asset].forEach((r,i)=>{const y=578+(i+1)*rowHeight;if(i%2===0||r.n===0){x.fillStyle=r.n===0?'#fbf3f2':'#f5f8fa';x.fillRect(a-8,y-rowHeight+3,470,rowHeight);}text(num(r.p),a,y,font);text(String(r.n),a+178,y,font,'#183247',true);text(money(r.loss),a+295,y,font,r.n===0?'#963e36':'#183247',false,165);});
     }
-    line(925);text('Disciplina antes da entrada',60,967,29,'#183247',true);
+    line(944);text('Disciplina antes da entrada',60,967,29,'#183247',true);
     document.querySelectorAll('.rule-hl').forEach(rule);
     text('Valores teóricos, sem custos ou slippage. Não há garantia de resultado.',60,1283,20,'#4a5e70');
     text('Gratuito · theceji.github.io/paraquedas',60,1315,20,'#4a5e70');return c;
@@ -48,7 +46,7 @@
     button.addEventListener('click',async()=>{
       const m=getModel();if(!m.canExport)return;const run=++generation;downloadStarted=false;
       $('cartaoImagem').hidden=true;$('baixarCartao').hidden=true;$('cartaoCarregando').hidden=false;$('cartaoCarregando').textContent='Preparando seu cartão…';
-      $('cartaoResumo').textContent=m.asset+': '+m.selected.n+' contrato(s), stop de '+num(m.selected.p)+' pontos, perda prevista '+money(m.selected.loss)+'. Metas: '+money(m.target2)+' e '+money(m.target3)+'.';
+      $('cartaoResumo').textContent='Stop financeiro: '+money(m.stop)+'. Metas: '+money(m.target2)+' e '+money(m.target3)+'. Tabelas informativas de WIN e WDO, com todas as possibilidades até a primeira linha sem contrato. Uma única página.';
       $('cartaoDica').textContent='Fundo claro para impressão. O cartão reflete os limites e registros atuais, sem dados ocultos.';
       dialog.showModal();$('fecharCartao').focus();
       try{const canvas=draw(m),blob=await new Promise(r=>canvas.toBlob(r,'image/png'));if(run!==generation||!dialog.open)return;if(!blob)throw Error('PNG indisponível');
