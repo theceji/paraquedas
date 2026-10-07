@@ -33,12 +33,12 @@
     text('Gratuito · theceji.github.io/paraquedas',60,1315,20,'#4a5e70');return c;
   }
   function ligar(buttonId,getModel){
-    const button=$(buttonId),dialog=$('cartaoDialog');let url=null,generation=0;
-    const release=()=>{generation++;if(url)URL.revokeObjectURL(url);url=null;button.focus();};
+    const button=$(buttonId),dialog=$('cartaoDialog');let url=null,generation=0,downloadStarted=false;
+    const release=()=>{generation++;if(url){const released=url;if(downloadStarted)setTimeout(()=>URL.revokeObjectURL(released),30000);else URL.revokeObjectURL(released);}url=null;button.focus();};
     dialog.addEventListener('close',release);$('fecharCartao').addEventListener('click',()=>dialog.close());
-    $('baixarCartao').addEventListener('click',()=>setTimeout(()=>{if(dialog.open)dialog.close();},150));
+    $('baixarCartao').addEventListener('click',()=>{downloadStarted=true;setTimeout(()=>{if(dialog.open)dialog.close();},150);});
     button.addEventListener('click',async()=>{
-      const m=getModel();if(!m.canExport)return;const run=++generation;
+      const m=getModel();if(!m.canExport)return;const run=++generation;downloadStarted=false;
       $('cartaoImagem').hidden=true;$('baixarCartao').hidden=true;$('cartaoCarregando').hidden=false;$('cartaoCarregando').textContent='Preparando seu cartão…';
       $('cartaoResumo').textContent=m.asset+': '+m.selected.n+' contrato(s), stop de '+num(m.selected.p)+' pontos, perda prevista '+money(m.selected.loss)+'. Metas: '+money(m.target2)+' e '+money(m.target3)+'.';
       $('cartaoDica').textContent='Fundo claro para impressão. O cartão reflete os limites e registros atuais, sem dados ocultos.';

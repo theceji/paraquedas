@@ -8,3 +8,5 @@
 
 .unified .tile{min-width:0}.unified .tile strong{white-space:normal;overflow-wrap:anywhere;font-size:clamp(19px,2vw,26px)}.unified .eyebrow{overflow-wrap:anywhere}.diary-table td input{width:100%;min-width:0}
 @media(max-width:420px){.unified .tiles2{grid-template-columns:1fr}.contract-surface th:nth-child(2){font-size:9px}}
+
+.page-wide .wrap.unified{max-width:1180px}

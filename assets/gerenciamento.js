@@ -11,9 +11,11 @@
   function store(storage,key,value){try{storage.setItem(key,JSON.stringify(value));return true;}catch{return false;}}
   const state={finance:null,stop:null,stops:clone(M.DEFAULTS),selected:{asset:'WIN',index:0},results:Array(20).fill(null)};
   let previous=null,legacy=null,model,mode='manual',undo=null,order=[],rowsKey='',editing=false,stepOne=null,quote=null;
-  let savedOK=true,sessionOK=true,openedBy=null;
+  let savedOK=true,sessionOK=true,openedBy=null,quoteRequest=0,quoteError=false;
   // Acesso aos objetos de armazenamento também pode ser bloqueado pelo navegador.
   let local,session;try{local=window.localStorage;}catch{}try{session=window.sessionStorage;}catch{}
+  const rememberedQuote=session&&read(session,'paraquedas-cotacao-v1');
+  if(rememberedQuote?.manual&&Number.isFinite(rememberedQuote.points)&&rememberedQuote.points>0&&rememberedQuote.points<=1e7&&Number.isFinite(Date.parse(rememberedQuote.asOf)))quote={...rememberedQuote,label:'Referência manual de índice futuro · informada em '+new Date(rememberedQuote.asOf).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+'.'};
   const saved=local&&read(local,KEY);
   if(saved?.version===2&&Date.now()-saved.ts<TTL&&saved.ts<=Date.now()+300000){
     previous=M.validFinance(saved.finance)?saved.finance:null;
@@ -121,7 +123,7 @@
   function renderAnnual(){const sequence=[.4,-.6,.8,-.3,.5,-1,.6,.5,-.4,.9,-.3,.7],part=Number($('reinvestir').value);let extra=0,total=0,kept=0;const results=sequence.map(rate=>{const base=model.budget.total,v=Math.round((base+extra)*rate);total+=v;if(v>0){const back=Math.round(v*part);extra+=back;kept+=v-back;}else extra=Math.max(0,extra-Math.max(0,-v-base));return v/100;});drawChart('graficoAnual',results,['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']);$('resumoAnual').textContent='Resultado hipotético: '+money(total)+' · guardado fora do risco: '+money(kept)+'.';}
   function renderQuote(){
     $('cotacaoValor').textContent=quote?number(quote.points)+' pts':'—';
-    $('cotacaoInfo').textContent=quote?quote.label:'Referência indisponível. Informe um valor manual ou tente atualizar. Contratos pelo stop continuam independentes da cotação.';
+    $('cotacaoInfo').textContent=quote?quote.label+(quoteError?' Atualização indisponível; mantida a referência acima.':''):'Referência indisponível. Informe um valor manual ou tente atualizar. Contratos pelo stop continuam independentes da cotação.';
     const noc=quote?quote.points*20:null;$('nocional').textContent=noc===null?'—':money(noc);$('alavUm').textContent=noc!==null&&model?.budget.total>0?number(noc/model.budget.total)+'×':'—';$('alavPos').textContent=noc!==null&&model?.budget.total>0&&model.asset==='WIN'&&model.selected.n?number(noc*model.selected.n/model.budget.total)+'×':'—';
   }
   function render(){
@@ -145,12 +147,12 @@
   $('limpar').addEventListener('click',()=>{if(!state.results.some(v=>v!==null))return;undo=[...state.results];state.results.fill(null);persist();render();});
   $('desfazer').addEventListener('click',()=>{if(undo){state.results=undo;undo=null;persist();render();}});
   $('reinvestir').addEventListener('change',renderAnnual);
-  async function loadQuote(){ $('atualizarCotacao').disabled=true;try{quote=await window.CotacaoIndice.load();}catch{quote=null;}renderQuote();$('atualizarCotacao').disabled=false; }
+  async function loadQuote(){const request=++quoteRequest;$('atualizarCotacao').disabled=true;try{const next=await window.CotacaoIndice.load();if(request===quoteRequest){quote=next;quoteError=false;store(session,'paraquedas-cotacao-v1',null);}}catch{if(request===quoteRequest)quoteError=true;}if(request===quoteRequest){renderQuote();$('atualizarCotacao').disabled=false;}}
   $('atualizarCotacao').addEventListener('click',loadQuote);
-  $('usarCotacao').addEventListener('click',()=>{const e=$('cotacaoManual');if(!e.value||!e.reportValidity())return;quote={points:Number(e.value),label:'Referência manual de índice futuro · informada às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'})+'.'};renderQuote();});
+  $('usarCotacao').addEventListener('click',()=>{const e=$('cotacaoManual');if(!e.value||!e.reportValidity())return;quoteRequest++;quoteError=false;$('atualizarCotacao').disabled=false;quote={points:Number(e.value),manual:true,asOf:new Date().toISOString(),label:'Referência manual de índice futuro · informada em '+new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})+'.'};store(session,'paraquedas-cotacao-v1',quote);renderQuote();});
   mountTables();shuffle();render();persist();
   window.GerenciamentoApp={snapshot:()=>clone(M.calculate(state))};
   window.CartaoGerenciamento.ligar('btnCartao',()=>M.calculate(state));
   if(!state.finance)openWizard($('comecar'));
-  loadQuote();
+  if(!quote?.manual)loadQuote();
 })();
