@@ -1,362 +1,156 @@
-/* Paraquedas do Trader Indisciplinado — simulador de gerenciamento
-   Origem: planilha mensal de gerenciamento, reduzida a uma folha única de 20 dias, sem persistência.
-   Correções em relação à planilha: % do dia sempre sobre o capital inicial; "% da meta atingido"
-   (a planilha rotulava como "% que falta"); pizza calculada sobre as operações feitas (a planilha dividia por 24). */
+/* Interface do gerenciamento unificado. Dados confirmados locais; diário na sessão da aba. */
 (function () {
   'use strict';
-  const $ = (id) => document.getElementById(id);
-  const DIAS = 20;
-  const WIN_PONTO = 0.20;
-  const WDO_PONTO = 10;
-  const STOPS_WIN = [250, 300, 350, 400, 450, 500];
-  const STOPS_WDO = [10, 11, 11.5, 12, 15, 20];
-  const ACERTOS = [25, 30, 35, 45, 50, 75, 80];
-  let ultimo = null;
-  let exemplo = true;
-  let desfazer = null;
-  let cenarioAnterior = '35';
-  const campos = ['cap', 'meta', 'risco', 'dd'];
-  const padrao = Object.fromEntries(campos.map(id => [id, $(id).value]));
-
-  const brl = (v) => (v < 0 ? '−' : '') + 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const brl0 = (v) => (v < 0 ? '−' : '') + 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR');
-  const pct = (v, d = 1) => (v < 0 ? '−' : '') + Math.abs(v * 100).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }) + '%';
-  const num = (el, def) => { const v = parseFloat(String(el.value).replace(',', '.')); return isFinite(v) ? v : def; };
-
-  /* ---------- Cálculo puro (testável) ---------- */
-  function contratos(risco, pts, valorPonto) {
-    if (!(pts > 0) || !(risco > 0)) return 0;
-    return Math.floor(risco / (pts * valorPonto) + 1e-9);
+  const M=window.GerenciamentoModelo,$=id=>document.getElementById(id);
+  const KEY='paraquedas-gerenciamento-v2',SESSION='paraquedas-diario-v2',TTL=30*86400000;
+  const money=c=>(c<0?'−':'')+(Math.abs(c)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const number=v=>v.toLocaleString('pt-BR',{maximumFractionDigits:2});
+  const clone=v=>JSON.parse(JSON.stringify(v));
+  const month=()=>new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',timeZone:'America/Sao_Paulo'}).format(new Date());
+  function read(storage,key){try{return JSON.parse(storage.getItem(key)||'null');}catch{return null;}}
+  function store(storage,key,value){try{storage.setItem(key,JSON.stringify(value));return true;}catch{return false;}}
+  const state={finance:null,stop:null,stops:clone(M.DEFAULTS),selected:{asset:'WIN',index:0},results:Array(20).fill(null)};
+  let previous=null,legacy=null,model,mode='manual',undo=null,order=[],rowsKey='',editing=false,stepOne=null,quote=null;
+  let savedOK=true,sessionOK=true,openedBy=null;
+  // Acesso aos objetos de armazenamento também pode ser bloqueado pelo navegador.
+  let local,session;try{local=window.localStorage;}catch{}try{session=window.sessionStorage;}catch{}
+  const saved=local&&read(local,KEY);
+  if(saved?.version===2&&Date.now()-saved.ts<TTL&&saved.ts<=Date.now()+300000){
+    previous=M.validFinance(saved.finance)?saved.finance:null;
+    if(saved.month===month())state.finance=previous;
+    if(Number.isFinite(saved.stop)&&saved.stop>=0)state.stop=saved.stop;
+    for(const asset of ['WIN','WDO'])if(Array.isArray(saved.stops?.[asset])&&saved.stops[asset].length===6)state.stops[asset]=saved.stops[asset].map((v,i)=>Number.isFinite(v)&&v>=0?v:M.DEFAULTS[asset][i]);
+    if(saved.selected&&['WIN','WDO'].includes(saved.selected.asset)&&Number.isInteger(saved.selected.index)&&saved.selected.index>=0&&saved.selected.index<6)state.selected=saved.selected;
+  }else if(local){
+    const old=read(local,'paraquedas-plano');
+    const pq=old?.pq&&Date.now()-old.pq.ts<TTL?old.pq:null,ger=old?.ger&&Date.now()-old.ger.ts<TTL?old.ger:null;
+    if(pq?.entradas)legacy=pq.entradas;
+    if(ger&&Number.isFinite(ger.risco)&&ger.risco>=0)state.stop=ger.risco;
+    else if(pq&&Number.isFinite(pq.stopEf)&&pq.stopEf>=0)state.stop=pq.stopEf;
+    for(const asset of ['WIN','WDO']){const values=ger?.[asset==='WIN'?'stopsWin':'stopsWdo'];if(Array.isArray(values)&&values.length===6)state.stops[asset]=values.map((v,i)=>Number.isFinite(v)&&v>=0?v:M.DEFAULTS[asset][i]);}
   }
-
-  function calcular(p) {
-    const risco = p.cap * p.riscoPct / 100;
-    const dd = p.cap * p.ddPct / 100;
-    const metaR = p.cap * p.metaPct / 100;
-    let saldo = p.cap, total = 0, gains = 0, losses = 0, lancados = 0;
-    let primeiroLimite = null, totalNoLimite = 0, maiorPerda = 0, aposLimite = 0;
-    const linhas = p.resultados.map((v, i) => {
-      if (v === null) return { dia: i + 1, v: null, sit: '-', pctDia: null, saldo: null, pctMeta: null };
-      lancados++;
-      total += v; saldo += v;
-      maiorPerda = Math.max(maiorPerda, -total);
-      if (primeiroLimite !== null) aposLimite++;
-      if (primeiroLimite === null && dd > 0 && total <= -dd) { primeiroLimite = i + 1; totalNoLimite = total; }
-      const sit = v > 0 ? 'Gain' : (v < 0 ? 'Loss' : '-');
-      if (v > 0) gains++; else if (v < 0) losses++;
-      return {
-        dia: i + 1, v, sit,
-        pctDia: p.cap > 0 ? v / p.cap : 0,
-        saldo,
-        pctMeta: p.cap > 0 && p.metaPct > 0 ? ((saldo - p.cap) / p.cap) / (p.metaPct / 100) : 0
-      };
-    });
-    return {
-      risco, dd, metaR,
-      win: STOPS_WIN.map((_, i) => p.stopsWin[i]).map((pts) => { const c = contratos(risco, pts, WIN_PONTO); return { pts, c, fin: pts * WIN_PONTO * c }; }),
-      wdo: STOPS_WDO.map((_, i) => p.stopsWdo[i]).map((pts) => { const c = contratos(risco, pts, WDO_PONTO); return { pts, c, fin: pts * WDO_PONTO * c }; }),
-      linhas, total, saldo, gains, losses, lancados,
-      pctMetaFinal: p.cap > 0 && p.metaPct > 0 ? (total / p.cap) / (p.metaPct / 100) : 0,
-      primeiroLimite, totalNoLimite, maiorPerda, aposLimite,
-      alerta: primeiroLimite !== null
-    };
+  const diary=session&&read(session,SESSION);
+  if(diary?.month===month()&&Array.isArray(diary.results))state.results=Array.from({length:20},(_,i)=>typeof diary.results[i]==='number'&&Number.isFinite(diary.results[i])&&Math.abs(diary.results[i])<=1e9?diary.results[i]:null);
+  function persist(){
+    if(state.finance)savedOK=store(local,KEY,{version:2,ts:Date.now(),month:month(),finance:state.finance,stop:state.stop,stops:state.stops,selected:state.selected});
+    sessionOK=store(session,SESSION,{month:month(),results:state.results});
+    $('estadoSalvo').textContent=(savedOK?'Respostas e limites salvos por até 30 dias.':'Armazenamento local indisponível; mantenha esta página aberta.')+' '+(sessionOK?'Diário preservado nesta aba.':'Não foi possível preservar o diário ao recarregar.');
   }
-  window.__gerenciamentoCalcular = calcular;
-
-  /* ---------- Montagem das tabelas ---------- */
-  function montarStops(tbodyId, stops, prefixo, passo) {
-    $(tbodyId).innerHTML = stops.map((s, i) => `<tr>
-      <td><input type="number" id="${prefixo}${i}" value="${s}" min="0" step="${passo}" inputmode="decimal" aria-label="Stop em pontos, linha ${i + 1}"></td>
-      <td><strong class="num" id="${prefixo}c${i}">—</strong></td>
-      <td class="num" id="${prefixo}f${i}">—</td></tr>`).join('');
+  const inputNumber=id=>$(id).value===''?null:Number($(id).value);
+  function stage(n){$('obrigacoesForm').hidden=n!==1;$('riscoForm').hidden=n!==2;$('etapaRotulo').textContent='Etapa '+n+' de 2';$('perguntasTitulo').textContent=n===1?'Suas obrigações':'Quanto vai para o risco?';$('orcamentoDialog').scrollTop=0;$(n===1?'renda':'temAplicacao').focus();}
+  function refreshSobra(){
+    const a=inputNumber('renda'),b=inputNumber('contas');
+    $('sobraValor').textContent=a===null||b===null?'—':money(M.cents(a-b));
+    const max=Math.max(0,(a||0)-(b||0));$('sobraRisco').max=String(max);$('sobraMaxima').textContent='Até '+money(M.cents(max))+' disponíveis da sobra. Informe zero se não destinar essa parte.';
   }
-  function montarDias() {
-    let h = '';
-    for (let i = 0; i < DIAS; i++) {
-      h += `<tr id="linha${i}">
-        <td>Dia ${i + 1}</td>
-        <td><input type="number" id="d${i}" step="10" inputmode="decimal" aria-label="Resultado do dia ${i + 1} em reais"></td>
-        <td class="dia-col"><span class="pill" id="s${i}">-</span></td>
-        <td class="num dia-col" id="p${i}">-</td>
-        <td class="num dia-col" id="b${i}">-</td>
-        <td class="num dia-col" id="m${i}">-</td>
-        <td class="dia-toggle"><button type="button" class="btn" data-dia="${i}" aria-expanded="false" aria-controls="detalhe${i}" aria-label="Detalhes do dia ${i + 1}">Ver</button></td></tr>
-        <tr class="dia-extra" id="detalhe${i}" hidden><td colspan="7"><dl>
-          <dt>Situação</dt><dd id="ds${i}">—</dd><dt>% do dia</dt><dd id="dp${i}">—</dd><dt>Saldo</dt><dd id="db${i}">—</dd><dt>% da meta</dt><dd id="dm${i}">—</dd>
-        </dl></td></tr>`;
+  function optionalFields(){
+    const application=$('temAplicacao').value==='yes';$('aplicacaoCampos').hidden=!application;
+    ['patrimonio','cdi','ir'].forEach(id=>$(id).disabled=!application);$('cdi').max='50';
+    const extras=$('temExtras').value==='yes';$('extrasCampos').hidden=!extras;
+    $('extras').querySelectorAll('input,select').forEach(e=>e.disabled=!extras);
+    $('adicionarRenda').disabled=$('extras').children.length>=4;
+  }
+  function addExtra(x){
+    if($('extras').children.length>=4)return;
+    const item=document.createElement('div');item.className='extra-source';
+    item.innerHTML='<div class="extra-heading"><select class="extra-type" aria-label="Tipo de renda" required><option value="">Selecione</option><option value="aluguel">Aluguel</option><option value="dividendos">Dividendos</option><option value="extra">Renda extra / freela</option><option value="prolabore">Pró-labore</option><option value="outra">Outra renda</option></select><button type="button" class="btn remove-extra" aria-label="Remover esta renda">×</button></div><div class="wizard-fields"><div class="field"><label>Valor líquido (R$)<input class="extra-amount" type="number" min="0" max="1000000000" step="0.01" required inputmode="decimal"></label></div><div class="field"><label>Vai para o risco (%)<input class="extra-percent" type="number" min="0" max="100" step="0.01" required inputmode="decimal"></label></div></div>';
+    if(x){item.querySelector('.extra-type').value=x.type;item.querySelector('.extra-amount').value=x.amount;item.querySelector('.extra-percent').value=x.percent;}
+    item.querySelector('.remove-extra').addEventListener('click',()=>{item.remove();if(!$('extras').children.length)$('temExtras').value='no';optionalFields();});
+    $('extras').append(item);optionalFields();
+  }
+  function fillWizard(f){
+    $('obrigacoesForm').reset();$('riscoForm').reset();$('extras').replaceChildren();$('wizardErro').hidden=true;
+    if(f){
+      $('renda').value=f.income;$('contas').value=f.bills;$('reserva').value=f.reserve;
+      $('temAplicacao').value=f.capital>0?'yes':'no';$('patrimonio').value=f.capital;$('cdi').value=f.cdi;$('ir').value=f.tax;
+      $('sobraRisco').value=f.allocation;$('saque').value=f.withdrawal;$('temExtras').value=f.extras.length?'yes':'no';f.extras.forEach(addExtra);
+    }else if(legacy){
+      for(const [id,key] of [['renda','renda'],['contas','contas'],['patrimonio','pat'],['cdi','cdi'],['ir','ir'],['saque','saque']])if(legacy[key]!==undefined)$(id).value=legacy[key];
+      $('reserva').value={nao:'none',parte:'partial',completa:'full'}[legacy.reserva]||'';
+      $('temAplicacao').value=Number(legacy.pat)>0?'yes':'no';
+      const allocation=Math.max(0,Number(legacy.renda)-Number(legacy.contas))*Number(legacy.fracSobra);
+      if(Number.isFinite(allocation))$('sobraRisco').value=(Math.round(allocation*100)/100);
+      const extras=Array.isArray(legacy.extras)?legacy.extras.slice(0,4):[];$('temExtras').value=extras.length?'yes':'no';
+      extras.forEach(x=>addExtra({type:x.tipo,amount:x.valor,percent:x.pct}));
     }
-    $('tDias').innerHTML = h;
+    optionalFields();refreshSobra();
   }
-
-  function lerParametros() {
-    const resultados = [];
-    for (let i = 0; i < DIAS; i++) {
-      const raw = $('d' + i).value;
-      resultados.push(raw === '' ? null : num($('d' + i), null));
-    }
-    return {
-      cap: Math.max(0, num($('cap'), 0)),
-      metaPct: Math.max(0, num($('meta'), 0)),
-      riscoPct: Math.max(0, num($('risco'), 0)),
-      ddPct: Math.max(0, num($('dd'), 0)),
-      stopsWin: STOPS_WIN.map((d, i) => num($('w' + i), d)),
-      stopsWdo: STOPS_WDO.map((d, i) => num($('o' + i), d)),
-      resultados
-    };
-  }
-
-  /* ---------- Gráficos ---------- */
-  function desenharBarras(r) {
-    const W = 600, H = 240, pl = 62, pr = 8, pt = 12, pb = 26;
-    const vals = r.linhas.map((l) => l.v || 0);
-    const maxP = Math.max(1, ...vals), maxN = Math.max(1, ...vals.map((v) => -v));
-    const ph = H - pt - pb;
-    const y0 = pt + ph * (maxP / (maxP + maxN));
-    const k = (y0 - pt) / maxP;
-    const step = (W - pl - pr) / DIAS, bw = step * 0.62;
-    let o = '';
-    [maxP, 0, -maxN].forEach((t) => {
-      const y = y0 - t * k;
-      o += `<line x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}" stroke="var(--line)"/>`;
-      o += `<text x="${pl - 8}" y="${y + 4}" text-anchor="end" font-size="12" fill="var(--muted)">${brl0(t)}</text>`;
-    });
-    vals.forEach((v, i) => {
-      const cx = pl + step * i + step / 2;
-      if (v !== 0) {
-        const h = Math.abs(v) * k;
-        o += `<rect x="${cx - bw / 2}" y="${v > 0 ? y0 - h : y0}" width="${bw}" height="${Math.max(1, h)}" rx="3" fill="${v > 0 ? 'var(--green)' : 'var(--red)'}"/>`;
-      }
-      o += `<text x="${cx}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${i + 1}</text>`;
-    });
-    o += `<line x1="${pl}" x2="${W - pr}" y1="${y0}" y2="${y0}" stroke="var(--ink)" stroke-width="1.5"/>`;
-    $('chBar').innerHTML = o;
-  }
-
-  function desenharPizza(r) {
-    const cx = 110, cy = 100, R = 88, r0 = 54;
-    const tot = r.gains + r.losses;
-    let o = '';
-    if (tot === 0) {
-      o += `<circle cx="${cx}" cy="${cy}" r="${(R + r0) / 2}" fill="none" stroke="var(--line)" stroke-width="${R - r0}"/>`;
-      o += `<text x="${cx}" y="${cy + 6}" text-anchor="middle" font-size="16" fill="var(--muted)">Sem operações</text>`;
-    } else {
-      const frac = r.gains / tot;
-      const arc = (a0, a1, cor) => {
-        if (a1 - a0 >= Math.PI * 2 - 1e-6) return `<circle cx="${cx}" cy="${cy}" r="${(R + r0) / 2}" fill="none" stroke="${cor}" stroke-width="${R - r0}"/>`;
-        const p = (a, rad) => [cx + rad * Math.sin(a), cy - rad * Math.cos(a)];
-        const [x0, y0] = p(a0, R), [x1, y1] = p(a1, R), [x2, y2] = p(a1, r0), [x3, y3] = p(a0, r0);
-        const big = a1 - a0 > Math.PI ? 1 : 0;
-        return `<path d="M${x0} ${y0} A${R} ${R} 0 ${big} 1 ${x1} ${y1} L${x2} ${y2} A${r0} ${r0} 0 ${big} 0 ${x3} ${y3} Z" fill="${cor}"/>`;
-      };
-      const ag = frac * Math.PI * 2;
-      if (r.gains) o += arc(0, ag, 'var(--green)');
-      if (r.losses) o += arc(ag, Math.PI * 2, 'var(--red)');
-      o += `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="26" font-weight="800" fill="var(--ink)" font-family="Archivo, sans-serif">${Math.round(frac * 100)}%</text>`;
-      o += `<text x="${cx}" y="${cy + 26}" text-anchor="middle" font-size="13" fill="var(--muted)">de acerto</text>`;
-    }
-    o += `<text x="250" y="72" font-size="15" fill="var(--muted)">Dias com gain</text><text x="250" y="100" font-size="26" font-weight="800" fill="var(--green)" font-family="Archivo, sans-serif">${r.gains}</text>`;
-    o += `<text x="250" y="134" font-size="15" fill="var(--muted)">Dias com loss</text><text x="250" y="162" font-size="26" font-weight="800" fill="var(--red)" font-family="Archivo, sans-serif">${r.losses}</text>`;
-    $('chPie').innerHTML = o;
-  }
-
-  /* ---------- Render ---------- */
-  function render() {
-    const p = lerParametros();
-    const r = calcular(p);
-
-    $('kRisco').textContent = brl(r.risco);
-    $('kDD').textContent = brl(-r.dd);
-    $('kMeta').textContent = brl(r.metaR);
-    $('kMetaPct').textContent = p.metaPct.toLocaleString('pt-BR') + '% sobre ' + brl0(p.cap);
-    $('kStops').textContent = r.risco > 0 ? String(Math.floor(r.dd / r.risco + 1e-9)) : '—';
-    const entradas = { ...Object.fromEntries(campos.map(id => [id, $(id).value])), stopsWin: p.stopsWin, stopsWdo: p.stopsWdo, exemplo };
-    ultimo = { pagina: 'ger', dados: { cap: p.cap, metaPct: p.metaPct, riscoPct: p.riscoPct, ddPct: p.ddPct, risco: r.risco, dd: r.dd, metaR: r.metaR, stopsWin: p.stopsWin, stopsWdo: p.stopsWdo, entradas, exemplo } };
-    const salvo = window.PlanoCartao && window.PlanoCartao.salvar('ger', ultimo.dados);
-    $('planoEstado').textContent = (exemplo ? 'Exemplo ilustrativo' : 'Meu gerenciamento') + (salvo ? ' · limites salvos neste navegador por 30 dias' : ' · armazenamento indisponível; mantenha a página aberta');
-    const pq = window.PlanoCartao && window.PlanoCartao.ler().pq;
-    const relacao = $('relacaoLimites');
-    relacao.className = 'hint' + (pq && (pq.orc <= 0 || r.risco > pq.stopEf) ? ' neg' : '');
-    relacao.textContent = !pq ? 'Defina o limite diário na página Paraquedas para comparar com o risco por operação.' : pq.orc <= 0 ? 'O Paraquedas está sem orçamento. Nenhuma operação cabe no gerenciamento combinado.' : r.risco > pq.stopEf ? 'Risco por operação maior que o limite diário de ' + brl(pq.stopEf) + '. Ajuste os limites antes de operar.' : r.risco > 0 ? 'Limite diário ' + brl(pq.stopEf) + ' · até ' + Math.floor(pq.stopEf / r.risco + 1e-9) + ' perdas completas por dia.' : 'Defina um risco por operação maior que zero.';
-
-    let algumZero = false;
-    r.win.forEach((x, i) => { const c = $('wc' + i); c.textContent = x.c; c.classList.toggle('zero', x.c === 0); $('wf' + i).textContent = brl(x.fin); if (x.c === 0) algumZero = true; });
-    r.wdo.forEach((x, i) => { const c = $('oc' + i); c.textContent = x.c; c.classList.toggle('zero', x.c === 0); $('of' + i).textContent = brl(x.fin); if (x.c === 0) algumZero = true; });
-    $('warnCtr').hidden = !algumZero;
-
-    r.linhas.forEach((l, i) => {
-      const s = $('s' + i);
-      s.textContent = l.sit;
-      s.className = 'pill' + (l.sit === 'Gain' ? ' gain' : l.sit === 'Loss' ? ' loss' : '');
-      $('p' + i).textContent = l.pctDia === null ? '-' : pct(l.pctDia, 2);
-      $('p' + i).className = 'num dia-col' + (l.v > 0 ? ' pos' : l.v < 0 ? ' neg' : '');
-      $('b' + i).textContent = l.saldo === null ? '-' : brl(l.saldo);
-      $('m' + i).textContent = l.pctMeta === null ? '-' : pct(l.pctMeta, 0);
-      ['s', 'p', 'b', 'm'].forEach(prefixo => $('d' + prefixo + i).textContent = $(prefixo + i).textContent);
-      const linha = $('linha' + i);
-      linha.classList.toggle('dia-limite', r.primeiroLimite === i + 1);
-      linha.classList.toggle('dia-apos', r.primeiroLimite !== null && i + 1 > r.primeiroLimite && l.v !== null);
-      linha.title = r.primeiroLimite === i + 1 ? 'Limite de perda atingido neste dia' : r.primeiroLimite !== null && i + 1 > r.primeiroLimite && l.v !== null ? 'Lançamento após o limite: fora da regra do gerenciamento' : '';
-      if (linha.title) $('ds' + i).textContent += ' · ' + linha.title;
-    });
-
-    $('sSaldo').textContent = brl(r.saldo);
-    const sr = $('sRes');
-    sr.textContent = (r.total >= 0 ? '+' : '') + brl(r.total) + ' no período';
-    sr.className = r.total > 0 ? 'pos' : r.total < 0 ? 'neg' : '';
-    $('sMeta').textContent = pct(r.pctMetaFinal, 0);
-    $('bMeta').style.width = Math.max(0, Math.min(1, r.pctMetaFinal)) * 100 + '%';
-    const usado = r.dd > 0 ? r.maiorPerda / r.dd : 0;
-    $('sDD').textContent = pct(Math.min(usado, 9.99), 0);
-    $('bDD').style.width = Math.min(1, usado) * 100 + '%';
-    const tot = r.gains + r.losses;
-    $('sAcerto').textContent = tot ? Math.round(100 * r.gains / tot) + '%' : '—';
-    $('sGL').textContent = r.gains + ' gain · ' + r.losses + ' loss';
-
-    $('alerta').hidden = !r.alerta;
-    if (r.alerta) $('alertaTxt').textContent = 'Limite de perda atingido no dia ' + r.primeiroLimite + ' (' + brl(r.totalNoLimite) + '). O período deveria encerrar nesse dia.' + (r.aposLimite ? ' Há ' + r.aposLimite + ' lançamento(s) posterior(es), fora da regra do gerenciamento. Ganhos posteriores não apagam esse limite.' : ' Pare e revise o gerenciamento.');
-
-    desenharBarras(r);
-    desenharPizza(r);
-  }
-
-  /* ---------- Cenários de acerto ----------
-     Regra: 1 operação por dia; perda = risco por operação (stop respeitado);
-     gain = 2x, 3x ou alternando 3x e 2x o risco ("misto"). É um norte, não uma promessa. */
-  let payoff = 'mix';
-  let ordem = [];
-
-  function multiplicador(k) { return payoff === 'mix' ? (k % 2 === 0 ? 3 : 2) : Number(payoff); }
-  function payoffMedio() { return payoff === 'mix' ? 2.5 : Number(payoff); }
-  function nGains(acerto) { return Math.round(DIAS * acerto / 100); }
-  function resultadoCenario(acerto, risco) {
-    const g = nGains(acerto);
-    let soma = 0;
-    for (let k = 0; k < g; k++) soma += multiplicador(k) * risco;
-    return { g, l: DIAS - g, total: soma - (DIAS - g) * risco };
-  }
-  function sortearOrdem() {
-    ordem = Array.from({ length: DIAS }, (_, i) => i);
-    for (let i = ordem.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ordem[i], ordem[j]] = [ordem[j], ordem[i]]; }
-  }
-  function cenarioAtivo() { const v = $('cenAcerto').value; return v === 'livre' ? null : Number(v); }
-
-  function preencherCenario() {
-    const acerto = cenarioAtivo();
-    if (acerto === null) return;
-    const risco = lerParametros().cap * lerParametros().riscoPct / 100;
-    const g = nGains(acerto);
-    const vals = new Array(DIAS).fill(-risco);
-    for (let k = 0; k < g; k++) vals[ordem[k]] = multiplicador(k) * risco;
-    const limite = lerParametros().cap * lerParametros().ddPct / 100;
-    let total = 0, encerrou = false;
-    for (let i = 0; i < DIAS; i++) {
-      const valor = Math.round(vals[i] * 100) / 100;
-      $('d' + i).value = encerrou ? '' : valor;
-      if (!encerrou) { total += valor; if (limite > 0 && total <= -limite) encerrou = true; }
-    }
-  }
-
-  function atualizarCenarios() {
-    const p = lerParametros();
-    const risco = p.cap * p.riscoPct / 100;
-    const acerto = cenarioAtivo();
-    cenarioAnterior = $('cenAcerto').value;
-    const empate = 100 / (1 + payoffMedio());
-    const nomePay = payoff === 'mix' ? 'gains de 2 a 3 vezes o stop' : 'gain de ' + payoff + ' para 1';
-    $('empate').textContent = 'Com ' + nomePay + ', o empate fica em ' + empate.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '% de acerto, antes de custos e sem aplicar o limite do período.';
-    $('matriz').innerHTML = ACERTOS.map((a) => {
-      const r = resultadoCenario(a, risco);
-      const cls = r.total > 0 ? 'pos' : r.total < 0 ? 'neg' : 'nul';
-      return `<button type="button" class="cel ${cls}" data-a="${a}" aria-pressed="${a === acerto}"><b>${a}%</b><span>${(r.total > 0 ? '+' : '') + brl0(r.total)}</span><small>${r.g} gains · ${r.l} stops</small></button>`;
-    }).join('');
-    const l = $('licao');
-    if (acerto === null) {
-      l.className = 'licao zero';
-      l.innerHTML = 'Você está usando seus próprios resultados. Escolha um cenário para comparar com o stop respeitado.';
-      return;
-    }
-    const realizado = calcular(p);
-    if (realizado.alerta) {
-      l.className = 'licao ko';
-      l.textContent = 'Cenário encerrado no dia ' + realizado.primeiroLimite + ': o limite de perda foi atingido. Resultado até a parada: ' + brl(realizado.total) + '. As operações seguintes não foram realizadas. A comparação abaixo é teórica e não aplica esse limite.';
-      return;
-    }
-    const r = resultadoCenario(acerto, risco);
-    const ganhos = payoff === 'mix' ? 'gains de ' + brl0(2 * risco) + ' a ' + brl0(3 * risco) : 'gains de ' + brl0(Number(payoff) * risco);
-    l.className = 'licao ' + (r.total > 0 ? 'ok' : r.total < 0 ? 'ko' : 'zero');
-    const fecho = r.total > 0 ? 'Com disciplina, mesmo acertando menos da metade das vezes, o mês fecha no positivo.'
-      : r.total < 0 ? 'Abaixo do empate, o stop respeitado limita o estrago: a perda fica controlada e o patrimônio sobrevive.'
-      : 'Empate: errando a maior parte das vezes, o stop respeitado segurou o mês no zero a zero.';
-    l.innerHTML = '<strong>' + acerto + '% de acerto:</strong> ' + r.g + ' ' + ganhos + ' e ' + r.l + ' stops de ' + brl0(risco) +
-      '. Resultado do mês: <strong>' + (r.total > 0 ? '+' : '') + brl0(r.total) + '</strong>. ' + (acerto >= 50 && r.total > 0 ? 'Com acerto alto, o stop protege o que você ganhou.' : fecho);
-  }
-
-  function aplicarCenario() { preencherCenario(); render(); atualizarCenarios(); }
-  function guardarResultados() {
-    if (cenarioAnterior !== 'livre') return;
-    const valores = Array.from({ length: DIAS }, (_, i) => $('d' + i).value);
-    if (!valores.some(v => v !== '')) return;
-    desfazer = { valores, payoff, ordem: [...ordem] };
-    $('btnDesfazer').hidden = false;
-  }
-  function limpar() {
-    guardarResultados();
-    for (let i = 0; i < DIAS; i++) $('d' + i).value = '';
-    $('cenAcerto').value = 'livre';
-    render(); atualizarCenarios();
-  }
-
-  montarStops('tWin', STOPS_WIN, 'w', 10);
-  montarStops('tWdo', STOPS_WDO, 'o', 0.5);
-  montarDias();
-  function restaurar(e) {
-    campos.forEach(id => { if (e[id] !== undefined && Number.isFinite(Number(e[id])) && Number(e[id]) >= 0) $(id).value = e[id]; });
-    [['stopsWin', 'w'], ['stopsWdo', 'o']].forEach(([chave, prefixo]) => {
-      if (Array.isArray(e[chave])) e[chave].slice(0, 6).forEach((v, i) => { if (Number.isFinite(v) && v >= 0) $(prefixo + i).value = v; });
-    });
-    exemplo = e.exemplo === true;
-  }
-  const salvo = window.PlanoCartao && window.PlanoCartao.ler().ger;
-  if (salvo) restaurar(salvo.entradas || { cap: salvo.cap, meta: salvo.metaPct, risco: salvo.riscoPct, dd: salvo.ddPct, stopsWin: salvo.stopsWin, stopsWdo: salvo.stopsWdo });
-  $('btnExemplo').addEventListener('click', () => {
-    if (!exemplo && !window.confirm('Substituir os limites do seu gerenciamento pelos valores de exemplo? Os resultados próprios serão mantidos.')) return;
-    restaurar({ ...padrao, stopsWin: STOPS_WIN, stopsWdo: STOPS_WDO, exemplo: true });
-    if (cenarioAtivo() !== null) aplicarCenario(); else { render(); atualizarCenarios(); }
+  function openWizard(button){editing=!!state.finance;$('orcamentoDialog').setAttribute('closedby',editing?'closerequest':'none');openedBy=button;fillWizard(state.finance||previous);$('cancelarEdicao').hidden=!editing;$('migracaoAviso').hidden=!!state.finance||!(legacy||previous);$('orcamentoDialog').showModal();stage(1);}
+  $('obrigacoesForm').addEventListener('submit',e=>{e.preventDefault();if(!$('obrigacoesForm').reportValidity())return;stepOne={income:inputNumber('renda'),bills:inputNumber('contas'),reserve:$('reserva').value};refreshSobra();stage(2);});
+  $('riscoForm').addEventListener('submit',e=>{
+    e.preventDefault();if(!$('riscoForm').reportValidity())return;
+    const app=$('temAplicacao').value==='yes';
+    const f={...stepOne,capital:app?inputNumber('patrimonio'):0,cdi:app?inputNumber('cdi'):0,tax:app?Number($('ir').value):15,allocation:inputNumber('sobraRisco'),withdrawal:inputNumber('saque'),extras:$('temExtras').value==='yes'?[...$('extras').children].map(item=>({type:item.querySelector('.extra-type').value,amount:Number(item.querySelector('.extra-amount').value),percent:Number(item.querySelector('.extra-percent').value)})):[]};
+    if(!M.validFinance(f)||($('temExtras').value==='yes'&&!f.extras.length)){$('wizardErro').hidden=false;$('wizardErro').textContent='Confira os valores e a parcela da sobra. Todos os campos aplicáveis precisam de resposta válida.';return;}
+    state.finance=f;legacy=null;previous=null;persist();render();$('orcamentoDialog').close();$('rever').focus();
   });
-  $('btnDesfazer').addEventListener('click', () => {
-    if (!desfazer) return;
-    desfazer.valores.forEach((v, i) => $('d' + i).value = v);
-    payoff = desfazer.payoff; ordem = [...desfazer.ordem]; $('cenAcerto').value = 'livre';
-    document.querySelectorAll('#payoff button').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.v === payoff)));
-    desfazer = null; $('btnDesfazer').hidden = true; render(); atualizarCenarios();
-  });
-  $('tDias').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-dia]'); if (!btn) return;
-    const aberto = btn.getAttribute('aria-expanded') !== 'true';
-    btn.setAttribute('aria-expanded', String(aberto)); btn.textContent = aberto ? 'Fechar' : 'Ver';
-    $('detalhe' + btn.dataset.dia).hidden = !aberto;
-  });
-  document.addEventListener('input', (e) => {
-    if (!e.target.matches('input')) return;
-    if (/^d\d+$/.test(e.target.id)) { $('cenAcerto').value = 'livre'; render(); atualizarCenarios(); return; }
-    exemplo = false;
-    if (['cap', 'risco', 'dd'].includes(e.target.id) && cenarioAtivo() !== null) { aplicarCenario(); return; }
-    render(); atualizarCenarios();
-  });
-  $('formMeta').addEventListener('submit', (e) => e.preventDefault());
-  $('cenAcerto').addEventListener('change', () => { guardarResultados(); aplicarCenario(); });
-  $('matriz').addEventListener('click', (e) => {
-    const b = e.target.closest('.cel'); if (!b) return;
-    guardarResultados(); $('cenAcerto').value = b.dataset.a; aplicarCenario();
-  });
-  document.querySelectorAll('#payoff button').forEach((btn) => btn.addEventListener('click', () => {
-    payoff = btn.dataset.v;
-    document.querySelectorAll('#payoff button').forEach((b2) => b2.setAttribute('aria-pressed', b2 === btn ? 'true' : 'false'));
-    if (cenarioAtivo() === null) { atualizarCenarios(); } else { aplicarCenario(); }
-  }));
-  $('btnSortear').addEventListener('click', () => { guardarResultados(); sortearOrdem(); if (cenarioAtivo() === null) $('cenAcerto').value = '35'; aplicarCenario(); });
-  $('btnLimpar').addEventListener('click', limpar);
-  if (window.PlanoCartao) window.PlanoCartao.ligar('btnCartao', () => ultimo);
-  sortearOrdem();
-  aplicarCenario();
+  $('renda').addEventListener('input',refreshSobra);$('contas').addEventListener('input',refreshSobra);
+  $('temAplicacao').addEventListener('change',optionalFields);$('temExtras').addEventListener('change',()=>{if($('temExtras').value==='yes'&&!$('extras').children.length)addExtra();optionalFields();});
+  $('adicionarRenda').addEventListener('click',()=>{addExtra();$('extras').lastElementChild?.querySelector('select').focus();});
+  $('voltarEtapa').addEventListener('click',()=>stage(1));
+  $('cancelarEdicao').addEventListener('click',()=>{$('orcamentoDialog').close();openedBy?.focus();});
+  $('orcamentoDialog').addEventListener('keydown',e=>{if(e.key==='Escape'&&!editing)e.preventDefault();});
+  $('orcamentoDialog').addEventListener('cancel',e=>{if(!editing){e.preventDefault();$('perguntasDescricao').textContent='Conclua as duas etapas ou use Voltar ao início. Não há opção de pular.';}else openedBy?.focus();});
+  $('comecar').addEventListener('click',e=>openWizard(e.currentTarget));$('rever').addEventListener('click',e=>openWizard(e.currentTarget));
+
+  function mountTables(){for(const asset of ['WIN','WDO']){
+    const body=$(asset==='WIN'?'tWin':'tWdo');body.innerHTML=state.stops[asset].map((v,i)=>'<tr id="row'+asset+i+'"><td><div class="stop-choice"><input type="radio" name="contratoEscolhido" data-asset="'+asset+'" data-index="'+i+'" aria-label="Selecionar '+asset+', linha '+(i+1)+'"><input id="stop'+asset+i+'" data-asset="'+asset+'" data-index="'+i+'" type="number" min="'+(asset==='WIN'?5:.5)+'" max="1000000" step="'+(asset==='WIN'?5:.5)+'" value="'+v+'" aria-label="Stop '+asset+' em pontos, linha '+(i+1)+'"></div></td><td id="n'+asset+i+'">—</td><td id="loss'+asset+i+'">—</td></tr>').join('');
+    body.addEventListener('input',e=>{const {asset,index}=e.target.dataset;if(!asset)return;if(e.target.type==='radio')state.selected={asset,index:Number(index)};else state.stops[asset][Number(index)]=e.target.value===''?0:Number(e.target.value);persist();render();});
+  }}
+  function shuffle(){order=Array.from({length:20},(_,i)=>i);for(let i=19;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}}
+  function drawChart(id,values,labels){const W=600,H=200,pl=50,pb=25,pt=12;const maxP=Math.max(1,...values),maxN=Math.max(1,...values.map(v=>-v)),height=H-pb-pt,y0=pt+height*maxP/(maxP+maxN),scale=height/(maxP+maxN),step=(W-pl-12)/Math.max(1,values.length);let svg='<line x1="'+pl+'" x2="590" y1="'+y0+'" y2="'+y0+'" stroke="var(--line)"/>';values.forEach((v,i)=>{const x=pl+(i+.5)*step,h=Math.abs(v)*scale;svg+='<rect x="'+(x-step*.3)+'" y="'+(v>=0?y0-h:y0)+'" width="'+step*.6+'" height="'+h+'" fill="'+(v>=0?'var(--green)':'var(--red)')+'" rx="3"/><text x="'+x+'" y="194" fill="var(--muted)" text-anchor="middle" font-size="11">'+labels[i]+'</text>';});$(id).innerHTML=svg;}
+  function renderDiary(){
+    const simulated=mode==='scenario', values=simulated?M.scenario(model,Number($('acerto').value),$('payoff').value,order):state.results;
+    const summary=simulated?M.ledger(values,model.budget.total,model.stop,model.days):model.actual;
+    $('acertoField').hidden=!simulated;$('payoffField').hidden=!simulated;$('sortear').hidden=!simulated;$('limpar').hidden=simulated;$('desfazer').hidden=simulated||!undo;
+    const key=model.days+'|'+mode;
+    if(rowsKey!==key){$('tDias').innerHTML=Array.from({length:model.days},(_,i)=>'<tr id="dayrow'+i+'"><td>'+(i+1)+'</td><td>'+(simulated?'<span id="d'+i+'"></span>':'<input id="d'+i+'" data-day="'+i+'" type="number" step="0.01" min="-1000000000" max="1000000000" inputmode="decimal" aria-label="Resultado do dia '+(i+1)+' em reais">')+'</td><td id="sit'+i+'"></td><td id="saldo'+i+'"></td></tr>').join('');rowsKey=key;}
+    summary.rows.slice(0,model.days).forEach((r,i)=>{const value=values[i];if(simulated)$('d'+i).textContent=r.value===null?'—':money(r.value);else if(document.activeElement!==$('d'+i))$('d'+i).value=typeof value==='number'?value:'';
+      $('sit'+i).textContent=r.value===null?'—':(r.value>0?'Gain':r.value<0?'Loss':'Zero')+(r.after?' · após limite':r.hit?' · limite':r.dailyViolation?' · excedeu stop':'');
+      $('dayrow'+i).classList.toggle('violation',!!(r.hit||r.after||r.dailyViolation));$('saldo'+i).textContent=r.value===null?'—':money(r.balance);
+    });
+    $('diasBadge').textContent=model.days+' dias';$('semDias').hidden=model.days>0;
+    $('resultadoRotulo').textContent=simulated?'Resultado simulado':'Resultado registrado';$('resultadoTotal').textContent=money(summary.sum);$('saldoAtual').textContent=money(model.budget.total+summary.sum);$('acertosResumo').textContent=summary.gains+' / '+summary.losses;
+    $('usoOrcamento').textContent=model.budget.total>0?number(summary.highestLoss/model.budget.total*100)+'%':summary.highestLoss>0?'Sem orçamento':'—';
+    const violations=summary.rows.filter(r=>r.dailyViolation).length;
+    $('diarioAlerta').textContent=summary.first!==null?'Limite do orçamento atingido no dia '+summary.first+'. '+(simulated?'O cenário encerra nesse limite.':'Lançamentos posteriores são violações; ganhos depois não apagam a ocorrência. Registros fora dos dias previstos também entram no saldo.'):violations?'Há '+violations+' dia(s) com perda superior ao stop diário informado.':simulated?'Cenário hipotético. Seus resultados próprios estão preservados e não entram nesta simulação.':'Registre uma operação por dia. O limite mensal é o orçamento confirmado.';
+    $('diarioAlerta').classList.toggle('error',summary.first!==null||violations>0);
+    const extra=state.results.map((v,i)=>({v,i})).filter(x=>x.i>=model.days&&x.v!==null);$('foraPeriodo').hidden=!extra.length;$('foraLista').replaceChildren();extra.forEach(x=>{const li=document.createElement('li');li.textContent='Dia '+(x.i+1)+': '+money(M.cents(x.v));$('foraLista').append(li);});
+    drawChart('graficoDias',summary.rows.slice(0,model.days).map(r=>(r.value||0)/100),summary.rows.slice(0,model.days).map(r=>r.day));
+  }
+  function renderAnnual(){const sequence=[.4,-.6,.8,-.3,.5,-1,.6,.5,-.4,.9,-.3,.7],part=Number($('reinvestir').value);let extra=0,total=0,kept=0;const results=sequence.map(rate=>{const base=model.budget.total,v=Math.round((base+extra)*rate);total+=v;if(v>0){const back=Math.round(v*part);extra+=back;kept+=v-back;}else extra=Math.max(0,extra-Math.max(0,-v-base));return v/100;});drawChart('graficoAnual',results,['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']);$('resumoAnual').textContent='Resultado hipotético: '+money(total)+' · guardado fora do risco: '+money(kept)+'.';}
+  function renderQuote(){
+    $('cotacaoValor').textContent=quote?number(quote.points)+' pts':'—';
+    $('cotacaoInfo').textContent=quote?quote.label:'Referência indisponível. Informe um valor manual ou tente atualizar. Contratos pelo stop continuam independentes da cotação.';
+    const noc=quote?quote.points*20:null;$('nocional').textContent=noc===null?'—':money(noc);$('alavUm').textContent=noc!==null&&model?.budget.total>0?number(noc/model.budget.total)+'×':'—';$('alavPos').textContent=noc!==null&&model?.budget.total>0&&model.asset==='WIN'&&model.selected.n?number(noc*model.selected.n/model.budget.total)+'×':'—';
+  }
+  function render(){
+    model=M.calculate(state);$('painel').hidden=!model.confirmed;$('inicioObrigatorio').hidden=model.confirmed;
+    if(!model.confirmed)return;
+    const b=model.budget;$('orcamentoValor').textContent=money(b.total);
+    $('saude').className='health '+b.health;$('saude').textContent=b.health==='red'?'Atenção: suas contas não fecham ou há retirada sem reserva. Reveja as respostas antes de arriscar.':b.health==='amber'?'Atenção: reserva incompleta ou retirada do patrimônio.':'Obrigações e reserva cobertas conforme as respostas informadas.';
+    $('composicao').replaceChildren();for(const [label,v]of [['Da sobra',b.allocation],['Aplicação',b.yield],['Outras rendas',b.extras],['Do patrimônio',b.withdrawal]]){const li=document.createElement('li');li.textContent=label+': '+money(v);$('composicao').append(li);}
+    if(document.activeElement!==$('stopFinanceiro'))$('stopFinanceiro').value=state.stop??'';
+    $('alvo2').textContent=money(model.target2);$('alvo3').textContent=money(model.target3);$('alvo2pts').textContent=model.selected?.n?number(model.selected.p*2)+' pontos · '+model.asset:'Selecione um stop válido';$('alvo3pts').textContent=model.selected?.n?number(model.selected.p*3)+' pontos · '+model.asset:'Selecione um stop válido';
+    $('diasValor').textContent=model.days+' dias';$('compatibilidade').textContent=model.message;$('compatibilidade').classList.toggle('error',!model.canExport);
+    for(const asset of ['WIN','WDO'])model.tables[asset].forEach((row,i)=>{const tr=$('row'+asset+i);$('n'+asset+i).textContent=row.n;$('loss'+asset+i).textContent=money(row.loss);tr.classList.toggle('selected',asset===model.asset&&i===model.index);tr.classList.toggle('invalid',!row.valid);tr.querySelector('input[type=radio]').checked=asset===model.asset&&i===model.index;$('stop'+asset+i).setAttribute('aria-invalid',String(!row.valid));});
+    $('selecao').textContent='Selecionado: '+model.asset+' · '+number(model.selected.p)+' pontos · '+model.selected.n+' contrato(s) · perda prevista '+money(model.selected.loss)+'.';
+    $('btnCartao').disabled=!model.canExport;$('piorCaso').textContent='O limite do período é '+money(b.total)+'. Desta quantia, '+money(b.withdrawal)+' vieram do patrimônio e '+money(b.income)+' da renda destinada ao risco. A retirada pode reduzir o que já estava guardado. Não há garantia de preservação em operações reais.';
+    renderDiary();renderAnnual();renderQuote();
+  }
+  $('stopFinanceiro').addEventListener('input',()=>{state.stop=inputNumber('stopFinanceiro');persist();render();});
+  $('tDias').addEventListener('input',e=>{if(!e.target.matches('[data-day]'))return;if(!e.target.validity.valid)return;state.results[Number(e.target.dataset.day)]=e.target.value===''?null:Number(e.target.value);persist();render();});
+  $('modo').addEventListener('change',()=>{mode=$('modo').value;renderDiary();});['acerto','payoff'].forEach(id=>$(id).addEventListener('change',renderDiary));
+  $('sortear').addEventListener('click',()=>{shuffle();renderDiary();});
+  $('limpar').addEventListener('click',()=>{if(!state.results.some(v=>v!==null))return;undo=[...state.results];state.results.fill(null);persist();render();});
+  $('desfazer').addEventListener('click',()=>{if(undo){state.results=undo;undo=null;persist();render();}});
+  $('reinvestir').addEventListener('change',renderAnnual);
+  async function loadQuote(){ $('atualizarCotacao').disabled=true;try{quote=await window.CotacaoIndice.load();}catch{quote=null;}renderQuote();$('atualizarCotacao').disabled=false; }
+  $('atualizarCotacao').addEventListener('click',loadQuote);
+  $('usarCotacao').addEventListener('click',()=>{const e=$('cotacaoManual');if(!e.value||!e.reportValidity())return;quote={points:Number(e.value),label:'Referência manual de índice futuro · informada às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'})+'.'};renderQuote();});
+  mountTables();shuffle();render();persist();
+  window.GerenciamentoApp={snapshot:()=>clone(M.calculate(state))};
+  window.CartaoGerenciamento.ligar('btnCartao',()=>M.calculate(state));
+  if(!state.finance)openWizard($('comecar'));
+  loadQuote();
 })();

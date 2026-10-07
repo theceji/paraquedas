@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Figtree:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/experiencia.css">
+<link rel="stylesheet" href="assets/unificado.css">
 <script src="assets/tema.js"></script>
 </head>
 <body class="page-wide tool-page">
@@ -42,13 +43,9 @@
     </div>
   </div>
 </nav>
-<header class="tool-header">
-  <div class="tool-heading"><div><span class="eyebrow">Ferramenta gratuita · sem cadastro</span><h1>Gerenciamento de risco</h1><p>Defina sua meta, seus limites e o tamanho de cada operação.</p></div><a class="back-home" href="./">↝ Início</a></div>
-  <nav class="tool-tabs" aria-label="Ferramentas"><a href="gerenciamento.html" aria-current="page"><span>01</span> Gerenciamento</a><a href="paraquedas.html" ><span>02</span> Paraquedas</a></nav>
-</header>
-
-<main class="wrap" id="conteudo">
-
+<header class="tool-header"><div class="tool-heading"><div><span class="eyebrow">Gratuito · sem cadastro</span><h1>Seu gerenciamento de risco</h1><p>Orçamento, stop e contratos no mesmo lugar. Uma operação por dia.</p></div><a class="back-home" href="./">↝ Início</a></div><nav class="tool-tabs" aria-label="Seções"><a href="#orcamento">Seu Paraquedas</a><a href="#contratos">Contratos</a><a href="#simulacao">Simulação</a><a href="#emitir-cartao">Cartão</a></nav></header>
+<noscript><p class="panel">Ative JavaScript para preencher o orçamento e usar a calculadora.</p></noscript>
+<main class="wrap unified" id="conteudo"><section id="inicioObrigatorio" class="panel"><h2>Comece pelas suas respostas</h2><p>Informe suas obrigações e o valor destinado ao risco para abrir o gerenciamento.</p><button class="btn btn-primary" id="comecar" type="button">Responder às perguntas</button></section><div id="painel" hidden>
 <section class="section regras-intro" aria-labelledby="t-reg">
   <span class="eyebrow">1 · Antes de começar</span>
   <h2 id="t-reg">4 regras de disciplina</h2>
@@ -62,7 +59,7 @@
     <div class="rule-hl r-blue">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M4 12h7M4 17h4"/><path d="M17 5v14M14 16l3 3 3-3"/></svg>
       <strong>Contratos pelo stop</strong>
-      <span>Stop maior, menos contratos. O risco em reais fica o mesmo.</span>
+      <span>Stop maior, menos contratos. A perda prevista fica dentro do risco definido.</span>
     </div>
     <div class="rule-hl r-red">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
@@ -77,150 +74,22 @@
   </div>
 </section>
 
-<section class="section" aria-labelledby="t-meta">
-  <span class="eyebrow">2 · Meta, limites e contratos</span>
-  <h2 id="t-meta">Quanto arriscar e quantos contratos operar</h2>
-  <div class="plano-tools"><p id="planoEstado" class="hint" role="status">Exemplo ilustrativo</p><button type="button" class="btn" id="btnExemplo">Usar exemplo</button></div>
-  <div class="row3">
-    <form class="panel" id="formMeta" autocomplete="off">
-      <h3>Controle de meta</h3>
-      <div class="field">
-        <label for="cap">Capital inicial (R$)</label>
-        <input type="number" id="cap" min="0" step="500" value="10000" inputmode="numeric">
-      </div>
-      <div class="field">
-        <label for="meta">Meta do mês (%)</label>
-        <input type="number" id="meta" min="0" step="0.5" value="20" inputmode="decimal">
-      </div>
-      <div class="field">
-        <label for="risco">Risco por operação diária (%)</label>
-        <input type="number" id="risco" min="0" step="0.25" value="5" inputmode="decimal">
-      </div>
-      <div class="field">
-        <label for="dd">Limite de perda mensal (%)</label>
-        <input type="number" id="dd" min="0" step="0.5" value="10" inputmode="decimal">
-        <span class="hint">Perda acumulada sobre o capital inicial que encerra o período. Não é a queda a partir do maior saldo.</span>
-      </div>
-    </form>
-    <div class="panel" aria-live="polite">
-      <h3>Seus limites</h3>
-      <div class="kpis kpis-1">
-        <div class="kpi"><span>Risco por operação</span><strong class="num" id="kRisco">—</strong><small>stop financeiro de cada trade</small></div>
-        <div class="kpi"><span>Limite de perda do mensal</span><strong class="num neg" id="kDD">—</strong><small>perda acumulada que acende o alerta</small></div>
-        <div class="kpi"><span>Meta do mês</span><strong class="num pos" id="kMeta">—</strong><small id="kMetaPct">—</small></div>
-        <p class="hint" id="relacaoLimites"></p>
-        <div class="kpi"><span>Perdas completas até o limite</span><strong class="num" id="kStops">—</strong><small>perdas seguidas do tamanho do risco</small></div>
-      </div>
-      <div class="cartao-acao" id="emitir-cartao">
-        <button type="button" class="btn btn-cartao" id="btnCartao">Gerar meu cartão de gerenciamento de risco</button>
-        <span class="hint">Grátis. Reúne seus limites e o orçamento do Paraquedas, quando preenchido. Cores suaves para salvar ou imprimir.</span>
-      </div>
-    </div>
-    <div class="panel">
-      <h3>Contratos por tamanho de stop</h3>
-      <span class="foot">Contratos = risco ÷ (pontos × valor do ponto), arredondado para baixo. Edite os stops para testar.</span>
-      <div class="ctr-grid">
-        <div>
-          <div class="ativo"><span class="ativo-tag t-win">WIN</span><span><strong>Mini &Iacute;ndice</strong><small>R$ 0,20 por ponto</small></span></div>
-          <div class="ctr-calc"><table class="compact">
-            <thead><tr><th scope="col">Stop (pts)</th><th scope="col">Contr.</th><th scope="col">Perda no stop</th></tr></thead>
-            <tbody id="tWin"></tbody>
-          </table></div>
-        </div>
-        <div>
-          <div class="ativo"><span class="ativo-tag t-wdo">WDO</span><span><strong>Mini Dólar</strong><small>R$ 10,00 por ponto</small></span></div>
-          <div class="ctr-calc"><table class="compact">
-            <thead><tr><th scope="col">Stop (pts)</th><th scope="col">Contr.</th><th scope="col">Perda no stop</th></tr></thead>
-            <tbody id="tWdo"></tbody>
-          </table></div>
-        </div>
-      </div>
-      <p class="warn" id="warnCtr" hidden>Em vermelho: o risco não paga nem 1 contrato com esse stop.</p>
-    </div>
-  </div>
-  <div class="bridge-panel"><div><span class="eyebrow">Próximo passo · opcional</span><h3>O risco cabe na sua renda?</h3><p>Leve sua meta e seus limites ao Paraquedas, confira o orçamento mensal e depois volte para emitir seu cartão.</p></div><a class="btn btn-primary" href="paraquedas.html">Refinar com minha renda →</a></div>
-  <p class="hint" id="cartaoAviso" role="status"></p>
-</section>
 
-<section class="section" aria-labelledby="t-dia">
-  <span class="eyebrow">3 · Simulação</span>
-  <h2 id="t-dia">Diário de 20 dias</h2>
-  <p class="lead">Escolha um percentual de acerto e veja o mês com stop respeitado. Ou digite seus próprios resultados (sinal de menos para perdas). Os resultados do diário não ficam salvos ao sair ou recarregar. Trocar de cenário permite desfazer a substituição enquanto esta página estiver aberta.</p>
-  <div class="panel cenarios">
-    <div class="cen-ctrl">
-      <div class="field">
-        <label for="cenAcerto">Cenário de acerto</label>
-        <select id="cenAcerto">
-          <option value="25">25% de acerto</option>
-          <option value="30">30% de acerto</option>
-          <option value="35" selected>35% de acerto</option>
-          <option value="45">45% de acerto</option>
-          <option value="50">50% de acerto</option>
-          <option value="75">75% de acerto</option>
-          <option value="80">80% de acerto</option>
-          <option value="livre">Meus resultados</option>
-        </select>
-      </div>
-      <div class="field">
-        <span class="lbl" id="payLbl">Ganho para cada R$ 1 arriscado</span>
-        <div class="seg" role="group" aria-labelledby="payLbl" id="payoff">
-          <button type="button" data-v="2" aria-pressed="false">2 para 1</button>
-          <button type="button" data-v="mix" aria-pressed="true">Misto 2 e 3</button>
-          <button type="button" data-v="3" aria-pressed="false">3 para 1</button>
-        </div>
-      </div>
-      <div class="actions">
-        <button type="button" class="btn" id="btnSortear">Sortear outra ordem</button>
-        <button type="button" class="btn" id="btnLimpar">Limpar resultados</button>
-        <button type="button" class="btn" id="btnDesfazer" hidden>Desfazer substituição</button>
-      </div>
-    </div>
-    <p class="licao" id="licao" aria-live="polite">—</p>
-    <div class="matriz-head">
-      <span class="eyebrow">Comparação teórica de 20 operações</span>
-      <span class="foot" id="empate">—</span>
-    </div>
-    <div class="matriz" id="matriz"></div>
-    <p class="foot norte">A comparação acima desconsidera o limite de perda do período; o diário encerra o cenário quando esse limite é atingido. Os resultados são hipotéticos, não uma promessa. Na prática, manter gains de 2 a 3 vezes o stop é muito difícil. O que está sempre sob o seu controle é o tamanho do stop.</p>
-  </div>
-  <div class="sim">
-    <div class="table-box diario-box">
-      <table class="compact">
-        <thead><tr><th scope="col">Dia</th><th scope="col">Resultado (R$)</th><th scope="col" class="dia-col">Situação</th><th scope="col" class="dia-col">% do dia</th><th scope="col" class="dia-col">Saldo</th><th scope="col" class="dia-col">% da meta</th><th scope="col" class="dia-toggle">Detalhes</th></tr></thead>
-        <tbody id="tDias"></tbody>
-      </table>
-    </div>
-    <div class="sim-side">
-      <div class="alert" id="alerta" role="alert" hidden>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
-        <span id="alertaTxt">Alerta: limite de perda atingido. Pare de operar e revise o gerenciamento.</span>
-      </div>
-      <div class="tiles tiles2">
-        <div class="tile"><span>Saldo atual</span><strong class="num" id="sSaldo">—</strong><small id="sRes">—</small></div>
-        <div class="tile"><span>Meta atingida</span><strong class="num" id="sMeta">—</strong><div class="bar" aria-hidden="true"><i id="bMeta" style="width:0%"></i></div></div>
-        <div class="tile"><span>Maior uso do limite</span><strong class="num" id="sDD">—</strong><div class="bar danger" aria-hidden="true"><i id="bDD" style="width:0%"></i></div></div>
-        <div class="tile"><span>Acertos</span><strong class="num" id="sAcerto">—</strong><small id="sGL">—</small></div>
-      </div>
-      <div class="chart-box">
-        <div class="legend"><span style="--c: var(--green)">Gain</span><span style="--c: var(--red)">Loss</span></div>
-        <svg id="chBar" viewBox="0 0 600 240" role="img" aria-label="Resultado de cada dia"></svg>
-      </div>
-      <div class="chart-box">
-        <svg id="chPie" viewBox="0 0 600 200" role="img" aria-label="Proporção de dias com gain e loss"></svg>
-      </div>
-    </div>
-  </div>
-  <p class="foot">Dias em branco ou com resultado zero não contam como gain nem loss. O percentual do dia é sempre sobre o capital inicial. "% da meta" mostra quanto da meta o saldo já alcançou: 100% é meta batida. Conteúdo educativo, não é recomendação de investimento.</p>
-</section>
-
-</main>
-<footer class="tool-footer"><span>Gratuito. Sem assinatura. Seus números ficam neste navegador.</span><a href="LICENSE">Licença MIT</a></footer>
+<div class="state-bar"><p id="estadoSalvo" class="hint" role="status"></p><button id="rever" class="btn" type="button">Rever minhas respostas</button></div>
+<div class="overview"><section class="panel" id="orcamento"><span class="eyebrow">Seu Paraquedas</span><h2>Seu orçamento do mês</h2><p id="saude" class="health"></p><strong class="budget-value" id="orcamentoValor">—</strong><ul id="composicao" class="composition"></ul><p class="hint">O orçamento pode ser perdido. Condições financeiras informadas não garantem o resultado das operações.</p></section>
+<section class="panel" aria-labelledby="cotacaoTitulo"><span class="eyebrow">Referência de mercado</span><h2 id="cotacaoTitulo">Exposição do WIN</h2><strong id="cotacaoValor" class="budget-value">—</strong><p id="cotacaoInfo" class="hint" role="status">Consultando referência de mercado…</p><div class="quote-metrics"><p><span>Exposição de 1 WIN</span><b id="nocional">—</b></p><p><span>1 WIN / orçamento</span><b id="alavUm">—</b></p><p><span>Posição escolhida / orçamento</span><b id="alavPos">—</b></p></div><button type="button" class="btn" id="atualizarCotacao">Atualizar referência</button><details><summary>Informar referência manual</summary><p class="hint">Use pontos do índice futuro. A origem manual ficará identificada; não altera o cálculo de contratos pelo stop.</p><div class="field"><label for="cotacaoManual">Pontos do índice futuro</label><input id="cotacaoManual" type="number" min="1" max="10000000" step="0.01" inputmode="decimal"></div><button class="btn" type="button" id="usarCotacao">Usar valor informado</button></details></section></div>
+<section class="section" id="limites"><div class="stop-targets"><div class="panel stop-panel"><label for="stopFinanceiro">Stop financeiro por operação (R$)</label><input id="stopFinanceiro" type="number" min="0.01" max="1000000000" step="0.01" inputmode="decimal"><span class="hint">Também é o limite diário neste modelo: uma operação por dia.</span></div><div class="panel"><span class="eyebrow">Meta mínima · 2:1</span><strong class="target-value" id="alvo2">—</strong><small id="alvo2pts">—</small></div><div class="panel"><span class="eyebrow">Meta recomendada* · 3:1</span><strong class="target-value" id="alvo3">—</strong><small id="alvo3pts">—</small></div><div class="panel"><span class="eyebrow">Dias previstos</span><strong class="target-value" id="diasValor">—</strong><small>Orçamento ÷ stop diário, até 20 dias.</small></div></div><p class="hint">*3:1 é a relação preferida neste modelo, não uma promessa. Alvos por operação, calculados sobre a perda efetiva da linha selecionada.</p><p id="compatibilidade" class="validation" role="status"></p></section>
+<section class="panel section" id="contratos"><h2>Contratos por tamanho de stop</h2><p class="hint">Contratos = risco ÷ (pontos × valor do ponto), arredondado para baixo. Edite os stops e escolha uma linha para calcular seus alvos.</p><div class="contracts"><div><div class="asset-title"><b class="ativo-tag t-win">WIN</b><div><h3>Mini Ýndice</h3><small>R$ 0,20 por ponto</small></div></div><div class="contract-surface"><table><thead><tr><th scope="col">Stop (pts)</th><th scope="col">Contr.</th><th scope="col">Risco contratado</th></tr></thead><tbody id="tWin"></tbody></table></div></div><div><div class="asset-title"><b class="ativo-tag t-wdo">WDO</b><div><h3>Mini Dólar</h3><small>R$ 10,00 por ponto</small></div></div><div class="contract-surface"><table><thead><tr><th scope="col">Stop (pts)</th><th scope="col">Contr.</th><th scope="col">Risco contratado</th></tr></thead><tbody id="tWdo"></tbody></table></div></div></div><p class="hint" id="selecao"></p><p class="hint">A seleção é feita pelo círculo ao lado do stop. Stops de WIN usam múltiplos de 5 pontos; WDO, de 0,5 ponto. Custos e diferenças de execução não estão incluídos.</p></section>
+<section class="panel section" id="simulacao"><div class="section-heading-row"><div><span class="eyebrow">Período derivado do orçamento</span><h2>Simulação dos dias previstos</h2></div><b class="days-badge" id="diasBadge">—</b></div><p class="hint">Resultados próprios ficam nesta aba durante a sessão, inclusive ao recarregar. Os cenários são separados e nunca sobrescrevem seus lançamentos.</p><div class="simulation-controls"><div class="field"><label for="modo">O que deseja acompanhar?</label><select id="modo"><option value="manual">Meus resultados</option><option value="scenario">Simular cenário</option></select></div><div class="field" id="acertoField" hidden><label for="acerto">Percentual de acerto</label><select id="acerto"><option value="25" >25%</option><option value="30" >30%</option><option value="35" >35%</option><option value="45" >45%</option><option value="50" selected>50%</option><option value="75" >75%</option><option value="80" >80%</option></select></div><div class="field" id="payoffField" hidden><label for="payoff">Ganho por R$ 1 perdido</label><select id="payoff"><option value="2">2 para 1</option><option value="3">3 para 1</option><option value="mix">Misto 2 e 3</option></select></div><button id="sortear" type="button" class="btn" hidden>Sortear outra ordem</button><button id="limpar" type="button" class="btn">Limpar meus resultados</button><button id="desfazer" type="button" class="btn" hidden>Desfazer limpeza</button></div><p id="diarioAlerta" class="validation" role="status"></p><div class="diary-grid"><div class="diary-table"><table><thead><tr><th scope="col">Dia</th><th scope="col">Resultado (R$)</th><th scope="col">Situação</th><th scope="col">Saldo</th></tr></thead><tbody id="tDias"></tbody></table><p id="semDias" class="hint" hidden>Defina orçamento e stop válidos para calcular os dias.</p></div><div><div class="tiles tiles2"><div class="tile"><span id="resultadoRotulo">Resultado registrado</span><strong id="resultadoTotal">—</strong></div><div class="tile"><span>Saldo do orçamento</span><strong id="saldoAtual">—</strong></div><div class="tile"><span>Ganhos / perdas</span><strong id="acertosResumo">—</strong></div><div class="tile"><span>Maior uso do orçamento</span><strong id="usoOrcamento">—</strong></div></div><svg id="graficoDias" viewBox="0 0 600 200" role="img" aria-label="Resultados dos dias previstos"></svg></div></div><details id="foraPeriodo" hidden><summary>Lançamentos preservados fora do período atual</summary><p class="hint">Uma revisão reduziu os dias previstos. Estes valores continuam guardados na sessão, mas não entram no resumo atual. Ampliar novamente o período os restaura.</p><ul id="foraLista"></ul></details><p class="hint">Cenários consideram uma operação por dia e param ao esgotar o orçamento. No diário, violações são sinalizadas e ganhos posteriores não apagam o limite atingido.</p></section>
+<section class="panel card-action" id="emitir-cartao"><div><span class="eyebrow">Gratuito · fundo claro para impressão</span><h2>Seu cartão de gerenciamento</h2><p class="hint">Orçamento, stop, alvos 2:1 e 3:1, dias e tabela de contratos. Usa os limites e resultados próprios, nunca o cenário simulado.</p></div><button class="btn btn-primary" id="btnCartao" type="button">Gerar meu cartão</button><p id="cartaoAviso" class="hint" role="status"></p></section>
+<section class="section supplementary"><details><summary>Se perder todo o orçamento?</summary><p id="piorCaso"></p></details><details><summary>Hipótese de evolução em 12 meses</summary><p class="hint">Sequência ilustrativa independente do diário: sete meses positivos e cinco negativos. Não é uma previsão.</p><div class="field"><label for="reinvestir">Lucro que reforça o orçamento</label><select id="reinvestir"><option value="0">0%</option><option value="0.5" selected>50%</option><option value="1">100%</option></select></div><svg id="graficoAnual" viewBox="0 0 600 200" role="img" aria-label="Hipótese de resultados ao longo de doze meses"></svg><p id="resumoAnual"></p><p class="hint">Renda e retirada informadas são tratadas como fontes recorrentes nesta hipótese. O exemplo não projeta consumo de um patrimônio finito nem garante resultado.</p></details><details><summary>Entenda os cálculos</summary><p>O stop financeiro é o máximo previsto para a única operação do dia. Os dias são a cobertura do orçamento para perdas integrais, limitados a 20. A meta vem da perda efetiva da linha selecionada, após arredondar os contratos para baixo.</p><p>A cotação serve ao nocional e à exposição; contratos pelo stop em pontos não dependem dela. “Exposição / orçamento” não é a margem da corretora. As estimativas não incluem custos, tributos do trade ou diferenças de execução.</p></details></section></div></main>
+<footer class="tool-footer"><span>Gratuito. Dados financeiros neste navegador; diário na sessão desta aba.</span><a href="LICENSE">Licença MIT</a></footer>
+<dialog id="orcamentoDialog" class="onboarding" aria-labelledby="perguntasTitulo" aria-describedby="perguntasDescricao"><div class="wizard-heading"><span class="eyebrow" id="etapaRotulo">Etapa 1 de 2</span><a href="./" class="back-home">↝ Início</a></div><h2 id="perguntasTitulo">Suas obrigações</h2><p id="perguntasDescricao" class="hint">Responda aos campos para avançar. Zero é válido; campo vazio não é zero.</p><p id="migracaoAviso" class="notice" hidden>Encontramos dados da versão anterior. Confira e conclua as duas etapas para confirmar seu orçamento.</p>
+<form id="obrigacoesForm"><div class="wizard-fields"><div class="field"><label for="renda">Renda líquida do mês (R$)</label><input type="number" id="renda" min="0" max="1000000000" step="0.01" inputmode="decimal" required ></div><div class="field"><label for="contas">Contas do mês (R$)</label><input type="number" id="contas" min="0" max="1000000000" step="0.01" inputmode="decimal" required ></div><div class="field full"><label for="reserva">Reserva de emergência</label><select id="reserva" required><option value="">Selecione uma resposta</option><option value="none">Não tenho</option><option value="partial">Tenho parte</option><option value="full">Completa</option></select><span class="hint">Informe como está sua reserva; não contamos esse dinheiro como orçamento para o trade.</span></div></div><p class="wizard-sobra">Sobra do mês: <strong id="sobraValor">—</strong></p><details><summary>Por que isso importa?</summary><p>Contas, reserva e investimentos vêm antes do risco. Separe o dinheiro das obrigações; a parcela destinada ao trade pode ser perdida.</p></details><div class="wizard-actions"><a href="./" class="btn">Voltar ao início</a><button type="submit" class="btn btn-primary">Próxima →</button></div></form>
+<form id="riscoForm" hidden><fieldset class="wizard-group"><legend>Rendimento de aplicação</legend><div class="field"><label for="temAplicacao">Você tem aplicação para estimar o rendimento?</label><select id="temAplicacao" required><option value="">Selecione uma resposta</option><option value="no">Não tenho</option><option value="yes">Tenho</option></select></div><div class="wizard-fields" id="aplicacaoCampos" hidden><div class="field"><label for="patrimonio">Patrimônio aplicado (R$)</label><input type="number" id="patrimonio" min="0" max="1000000000" step="0.01" inputmode="decimal" required disabled></div><div class="field"><label for="cdi">CDI estimado ao ano (%)</label><input type="number" id="cdi" min="0" max="1000000000" step="0.01" inputmode="decimal" required disabled></div><div class="field"><label for="ir">IR sobre o rendimento estimado (%)</label><select id="ir" required disabled><option value="">Selecione</option><option value="22.5">22,5%</option><option value="20">20%</option><option value="17.5">17,5%</option><option value="15">15%</option></select></div></div><p class="hint">Taxa informada por você, não uma cotação automática. O rendimento é uma estimativa mensal líquida simplificada.</p></fieldset><fieldset class="wizard-group"><legend>Parte da sobra para o risco</legend><div class="field"><label for="sobraRisco">Valor da sobra destinado ao risco (R$)</label><input type="number" id="sobraRisco" min="0" max="1000000000" step="0.01" inputmode="decimal" required ></div><p class="hint" id="sobraMaxima"></p></fieldset><fieldset class="wizard-group"><legend>Outras rendas</legend><div class="field"><label for="temExtras">Existem rendas que ainda não entraram no passo 1?</label><select id="temExtras" required><option value="">Selecione uma resposta</option><option value="no">Não</option><option value="yes">Sim</option></select></div><div id="extrasCampos" hidden><div id="extras"></div><button class="btn" type="button" id="adicionarRenda">+ Adicionar renda</button></div><p class="hint">Não inclua novamente renda já usada para calcular a sobra.</p></fieldset><fieldset class="wizard-group"><legend>Retirada do patrimônio</legend><div class="field"><label for="saque">Dinheiro retirado do que já estava guardado (R$)</label><input type="number" id="saque" min="0" max="1000000000" step="0.01" inputmode="decimal" required ></div><p class="hint">Informe zero se não houver retirada. Essa parcela reduz o patrimônio se for perdida.</p></fieldset><p id="wizardErro" class="validation" role="status" hidden></p><div class="wizard-actions"><button type="button" class="btn" id="voltarEtapa">↝ Voltar</button><button type="submit" class="btn btn-primary">Concluir e ver gerenciamento</button></div></form><button id="cancelarEdicao" type="button" class="btn" hidden>Cancelar revisão</button></dialog>
 <dialog id="cartaoDialog" class="cartao-dialog" aria-labelledby="cartaoTitulo" aria-describedby="cartaoDescricao">
   <div class="cartao-dialog-head"><div><span class="eyebrow">Seu arquivo · gratuito</span><h2 id="cartaoTitulo">Cartão de gerenciamento de risco</h2></div><button class="btn modal-close" id="fecharCartao" type="button" aria-label="Fechar prévia do cartão" autofocus>Fechar ×</button></div>
   <p id="cartaoDescricao">Confira seus números. O PNG tem fundo branco e cores suaves para impressão.</p>
   <div class="cartao-dialog-body"><div class="cartao-preview"><p id="cartaoCarregando" role="status">Preparando seu cartão…</p><img id="cartaoImagem" alt="Prévia do cartão de gerenciamento de risco" hidden></div><div class="cartao-download"><div id="cartaoResumo"></div><p class="hint" id="cartaoDica"></p><a id="baixarCartao" class="btn btn-primary" hidden>Baixar cartão (PNG) ↓</a><p class="hint">Esta janela fecha ao iniciar o download. Você também pode fechar sem baixar.</p></div></div>
 </dialog>
-<script src="assets/cartao.js"></script>
-<script src="assets/gerenciamento.js"></script>
-</body>
-</html>
+<script src="assets/gerenciamento-modelo.js"></script><script src="assets/cotacao.js"></script><script src="assets/cartao.js"></script><script src="assets/gerenciamento.js"></script></body></html>
