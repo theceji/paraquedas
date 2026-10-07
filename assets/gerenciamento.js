@@ -96,9 +96,23 @@
   $('comecar').addEventListener('click',e=>openWizard(e.currentTarget));$('rever').addEventListener('click',e=>openWizard(e.currentTarget));
 
   function mountTables(){for(const asset of ['WIN','WDO']){
-    const body=$(asset==='WIN'?'tWin':'tWdo');body.innerHTML=state.stops[asset].map((v,i)=>'<tr id="row'+asset+i+'"><td><div class="stop-choice"><input type="radio" name="contratoEscolhido" data-asset="'+asset+'" data-index="'+i+'" aria-label="Selecionar '+asset+', linha '+(i+1)+'"><input id="stop'+asset+i+'" data-asset="'+asset+'" data-index="'+i+'" type="number" min="'+(asset==='WIN'?5:.5)+'" max="1000000" step="'+(asset==='WIN'?5:.5)+'" value="'+v+'" aria-label="Stop '+asset+' em pontos, linha '+(i+1)+'"></div></td><td id="n'+asset+i+'">—</td><td id="loss'+asset+i+'">—</td></tr>').join('');
-    body.addEventListener('input',e=>{const {asset,index}=e.target.dataset;if(!asset)return;if(e.target.type==='radio')state.selected={asset,index:Number(index)};else state.stops[asset][Number(index)]=e.target.value===''?0:Number(e.target.value);persist();render();});
+    const body=$(asset==='WIN'?'tWin':'tWdo');
+    body.innerHTML=state.stops[asset].map((v,i)=>'<tr id="row'+asset+i+'" data-asset="'+asset+'" data-index="'+i+'"><td><div class="stop-choice"><input id="stop'+asset+i+'" data-asset="'+asset+'" data-index="'+i+'" type="number" min="'+(asset==='WIN'?5:.5)+'" max="1000000" step="'+(asset==='WIN'?5:.5)+'" value="'+v+'" aria-label="Stop '+asset+' em pontos, linha '+(i+1)+'"></div></td><td><button class="contract-select" id="n'+asset+i+'" type="button" aria-pressed="false">—</button></td><td id="loss'+asset+i+'">—</td></tr>').join('');
+    body.addEventListener('click',e=>{const row=e.target.closest('tr');if(!row)return;state.selected={asset,index:Number(row.dataset.index)};persist();render();});
+    body.addEventListener('input',e=>{const {asset,index}=e.target.dataset;if(!asset)return;state.selected={asset,index:Number(index)};state.stops[asset][Number(index)]=e.target.value===''?0:Number(e.target.value);persist();render();});
   }}
+  function renderAnswers(){
+    const f=state.finance,b=model.budget,reserve={none:'Não tenho',partial:'Parcial',full:'Completa'}[f.reserve];
+    function list(id,items){const dl=$(id);dl.replaceChildren();for(const [label,value]of items){const group=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;group.append(dt,dd);dl.append(group);}}
+    const cash=v=>money(M.cents(v));
+    list('respostasResumo',[['Renda líquida',cash(f.income)],['Contas do mês',cash(f.bills)],['Reserva de emergência',reserve],['Destinado ao risco',money(b.total)]]);
+    list('respostasObrigacoes',[['Renda líquida mensal',cash(f.income)],['Contas do mês',cash(f.bills)],['Sobra após as contas',cash(f.income-f.bills)],['Reserva de emergência',reserve]]);
+    const risk=[['Patrimônio aplicado',cash(f.capital)],['CDI estimado ao ano',f.capital>0?number(f.cdi)+'%':'Não se aplica'],['IR sobre rendimento',f.capital>0?number(f.tax)+'%':'Não se aplica'],['Rendimento mensal estimado líquido',money(b.yield)],['Sobra destinada ao risco',cash(f.allocation)],['Retirada do patrimônio',cash(f.withdrawal)]];
+    const labels={aluguel:'Aluguel',dividendos:'Dividendos',extra:'Renda extra / freela',prolabore:'Pró-labore',outra:'Outra renda'};
+    if(!f.extras.length)risk.push(['Outras rendas','Nenhuma informada']);
+    f.extras.forEach((e,i)=>risk.push(['Renda '+(i+1)+' · '+labels[e.type],cash(e.amount)+' · '+number(e.percent)+'% para o risco ('+cash(e.amount*e.percent/100)+')']));
+    list('respostasRisco',risk);
+  }
   function shuffle(){order=Array.from({length:20},(_,i)=>i);for(let i=19;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}}
   function drawChart(id,values,labels){const W=600,H=200,pl=50,pb=25,pt=12;const maxP=Math.max(1,...values),maxN=Math.max(1,...values.map(v=>-v)),height=H-pb-pt,y0=pt+height*maxP/(maxP+maxN),scale=height/(maxP+maxN),step=(W-pl-12)/Math.max(1,values.length);let svg='<line x1="'+pl+'" x2="590" y1="'+y0+'" y2="'+y0+'" stroke="var(--line)"/>';values.forEach((v,i)=>{const x=pl+(i+.5)*step,h=Math.abs(v)*scale;svg+='<rect x="'+(x-step*.3)+'" y="'+(v>=0?y0-h:y0)+'" width="'+step*.6+'" height="'+h+'" fill="'+(v>=0?'var(--green)':'var(--red)')+'" rx="3"/><text x="'+x+'" y="194" fill="var(--muted)" text-anchor="middle" font-size="11">'+labels[i]+'</text>';});$(id).innerHTML=svg;}
   function renderDiary(){
@@ -129,13 +143,14 @@
   function render(){
     model=M.calculate(state);$('painel').hidden=!model.confirmed;$('inicioObrigatorio').hidden=model.confirmed;
     if(!model.confirmed)return;
+    renderAnswers();
     const b=model.budget;$('orcamentoValor').textContent=money(b.total);
     $('saude').className='health '+b.health;$('saude').textContent=b.health==='red'?'Atenção: suas contas não fecham ou há retirada sem reserva. Reveja as respostas antes de arriscar.':b.health==='amber'?'Atenção: reserva incompleta ou retirada do patrimônio.':'Obrigações e reserva cobertas conforme as respostas informadas.';
     $('composicao').replaceChildren();for(const [label,v]of [['Da sobra',b.allocation],['Aplicação',b.yield],['Outras rendas',b.extras],['Do patrimônio',b.withdrawal]]){const li=document.createElement('li');li.textContent=label+': '+money(v);$('composicao').append(li);}
     if(document.activeElement!==$('stopFinanceiro'))$('stopFinanceiro').value=state.stop??'';
     $('alvo2').textContent=money(model.target2);$('alvo3').textContent=money(model.target3);$('alvo2pts').textContent=model.selected?.n?number(model.selected.p*2)+' pontos · '+model.asset:'Selecione um stop válido';$('alvo3pts').textContent=model.selected?.n?number(model.selected.p*3)+' pontos · '+model.asset:'Selecione um stop válido';
     $('diasValor').textContent=model.days+' dias';$('compatibilidade').textContent=model.message;$('compatibilidade').classList.toggle('error',!model.canExport);
-    for(const asset of ['WIN','WDO'])model.tables[asset].forEach((row,i)=>{const tr=$('row'+asset+i);$('n'+asset+i).textContent=row.n;$('loss'+asset+i).textContent=money(row.loss);tr.classList.toggle('selected',asset===model.asset&&i===model.index);tr.classList.toggle('invalid',!row.valid);tr.querySelector('input[type=radio]').checked=asset===model.asset&&i===model.index;$('stop'+asset+i).setAttribute('aria-invalid',String(!row.valid));});
+    for(const asset of ['WIN','WDO'])model.tables[asset].forEach((row,i)=>{const tr=$('row'+asset+i);$('n'+asset+i).textContent=row.n;$('loss'+asset+i).textContent=money(row.loss);tr.classList.toggle('selected',asset===model.asset&&i===model.index);tr.classList.toggle('invalid',!row.valid);$('n'+asset+i).setAttribute('aria-pressed',String(asset===model.asset&&i===model.index));$('n'+asset+i).setAttribute('aria-label','Selecionar '+asset+', '+number(row.p)+' pontos, '+row.n+' contrato(s)');$('stop'+asset+i).setAttribute('aria-invalid',String(!row.valid));});
     $('selecao').textContent='Selecionado: '+model.asset+' · '+number(model.selected.p)+' pontos · '+model.selected.n+' contrato(s) · perda prevista '+money(model.selected.loss)+'.';
     $('btnCartao').disabled=!model.canExport;$('piorCaso').textContent='O limite do período é '+money(b.total)+'. Desta quantia, '+money(b.withdrawal)+' vieram do patrimônio e '+money(b.income)+' da renda destinada ao risco. A retirada pode reduzir o que já estava guardado. Não há garantia de preservação em operações reais.';
     renderDiary();renderAnnual();renderQuote();
