@@ -43,7 +43,7 @@
   </div>
 </nav>
 <header class="tool-header">
-  <div class="tool-heading"><div><span class="eyebrow">Ferramenta gratuita · sem cadastro</span><h1>Gerenciamento de risco</h1><p>Defina sua meta, seus limites e o tamanho de cada operação.</p></div><a class="back-home" href="./">← Início</a></div>
+  <div class="tool-heading"><div><span class="eyebrow">Ferramenta gratuita · sem cadastro</span><h1>Gerenciamento de risco</h1><p>Defina sua meta, seus limites e o tamanho de cada operação.</p></div><a class="back-home" href="./">↝ Início</a></div>
   <nav class="tool-tabs" aria-label="Ferramentas"><a href="gerenciamento.html" aria-current="page"><span>01</span> Gerenciamento</a><a href="paraquedas.html" ><span>02</span> Paraquedas</a></nav>
 </header>
 
@@ -90,15 +90,15 @@
       </div>
       <div class="field">
         <label for="meta">Meta do mês (%)</label>
-        <input type="number" id="meta" min="0" step="0.5" value="5" inputmode="decimal">
+        <input type="number" id="meta" min="0" step="0.5" value="20" inputmode="decimal">
       </div>
       <div class="field">
-        <label for="risco">Risco por operação (%)</label>
-        <input type="number" id="risco" min="0" step="0.25" value="1" inputmode="decimal">
+        <label for="risco">Risco por operação diária (%)</label>
+        <input type="number" id="risco" min="0" step="0.25" value="5" inputmode="decimal">
       </div>
       <div class="field">
-        <label for="dd">Limite de perda do período (%)</label>
-        <input type="number" id="dd" min="0" step="0.5" value="5" inputmode="decimal">
+        <label for="dd">Limite de perda mensal (%)</label>
+        <input type="number" id="dd" min="0" step="0.5" value="10" inputmode="decimal">
         <span class="hint">Perda acumulada sobre o capital inicial que encerra o período. Não é a queda a partir do maior saldo.</span>
       </div>
     </form>
@@ -106,7 +106,7 @@
       <h3>Seus limites</h3>
       <div class="kpis kpis-1">
         <div class="kpi"><span>Risco por operação</span><strong class="num" id="kRisco">—</strong><small>stop financeiro de cada trade</small></div>
-        <div class="kpi"><span>Limite de perda do período</span><strong class="num neg" id="kDD">—</strong><small>perda acumulada que acende o alerta</small></div>
+        <div class="kpi"><span>Limite de perda do mensal</span><strong class="num neg" id="kDD">—</strong><small>perda acumulada que acende o alerta</small></div>
         <div class="kpi"><span>Meta do mês</span><strong class="num pos" id="kMeta">—</strong><small id="kMetaPct">—</small></div>
         <p class="hint" id="relacaoLimites"></p>
         <div class="kpi"><span>Perdas completas até o limite</span><strong class="num" id="kStops">—</strong><small>perdas seguidas do tamanho do risco</small></div>
@@ -121,7 +121,7 @@
       <span class="foot">Contratos = risco ÷ (pontos × valor do ponto), arredondado para baixo. Edite os stops para testar.</span>
       <div class="ctr-grid">
         <div>
-          <div class="ativo"><span class="ativo-tag t-win">WIN</span><span><strong>Mini Índice</strong><small>R$ 0,20 por ponto</small></span></div>
+          <div class="ativo"><span class="ativo-tag t-win">WIN</span><span><strong>Mini &Iacute;ndice</strong><small>R$ 0,20 por ponto</small></span></div>
           <div class="ctr-calc"><table class="compact">
             <thead><tr><th scope="col">Stop (pts)</th><th scope="col">Contr.</th><th scope="col">Perda no stop</th></tr></thead>
             <tbody id="tWin"></tbody>
