@@ -44,9 +44,37 @@
     $('sobraValor').textContent=a===null||b===null?'—':money(M.cents(a-b));
     const max=Math.max(0,(a||0)-(b||0));$('sobraRisco').max=String(max);$('sobraMaxima').textContent='Até '+money(M.cents(max))+' disponíveis da sobra. Informe zero se não destinar essa parte.';
   }
+  function allocationLabels(group){
+    const range=group.querySelector('.allocation-range');
+    group.querySelector('[data-allocation-min]').textContent=money(0);
+    group.querySelector('[data-allocation-max]').textContent=money(M.cents(Number(range.max)));
+    range.setAttribute('aria-valuetext',money(M.cents(Number(range.value))));
+  }
+  function refreshAllocation(group,max,ready=true){
+    const value=group.querySelector('.allocation-value'),range=group.querySelector('.allocation-range');
+    if(ready){
+      value.max=range.max=String(max);
+      if(group.dataset.automatic==='true')value.value=String(max);
+      else if(value.value!=='' && Number(value.value)>max)value.value=String(max);
+      range.value=value.value||'0';
+    }
+    allocationLabels(group);
+  }
+  function bindAllocation(group){
+    const value=group.querySelector('.allocation-value'),range=group.querySelector('.allocation-range');
+    range.addEventListener('input',()=>{group.dataset.automatic='false';value.value=range.value;allocationLabels(group);});
+    value.addEventListener('input',()=>{group.dataset.automatic='false';range.value=value.value||'0';allocationLabels(group);});
+  }
+  function refreshYield(){
+    const ready=['patrimonio','cdi','ir'].every(id=>$(id).value!=='' && $(id).validity.valid);
+    const total=ready?M.monthlyYield({capital:inputNumber('patrimonio'),cdi:inputNumber('cdi'),tax:inputNumber('ir')}):0;
+    $('rendimentoEstimado').textContent=ready?money(total):'—';
+    refreshAllocation($('rendimentoAlocacao'),total/100,ready);
+  }
+  bindAllocation($('rendimentoAlocacao'));
   function optionalFields(){
     const application=$('temAplicacao').value==='yes';$('aplicacaoCampos').hidden=!application;
-    ['patrimonio','cdi','ir'].forEach(id=>$(id).disabled=!application);$('cdi').max='50';
+    ['patrimonio','cdi','ir','rendimentoRisco','rendimentoRiscoFaixa'].forEach(id=>$(id).disabled=!application);$('cdi').max='50';
     const extras=$('temExtras').value==='yes';$('extrasCampos').hidden=!extras;
     $('extras').querySelectorAll('input,select').forEach(e=>e.disabled=!extras);
     $('adicionarRenda').disabled=$('extras').children.length>=4;
@@ -54,16 +82,22 @@
   function addExtra(x){
     if($('extras').children.length>=4)return;
     const item=document.createElement('div');item.className='extra-source';
-    item.innerHTML='<div class="extra-heading"><select class="extra-type" aria-label="Tipo de renda" required><option value="">Selecione</option><option value="aluguel">Aluguel</option><option value="dividendos">Dividendos</option><option value="extra">Renda extra / freela</option><option value="prolabore">Pró-labore</option><option value="outra">Outra renda</option></select><button type="button" class="btn remove-extra" aria-label="Remover esta renda">×</button></div><div class="wizard-fields"><div class="field"><label>Valor líquido (R$)<input class="extra-amount" type="number" min="0" max="1000000000" step="0.01" required inputmode="decimal"></label></div><div class="field"><label>Vai para o risco (%)<input class="extra-percent" type="number" min="0" max="100" step="0.01" required inputmode="decimal"></label></div></div>';
-    if(x){item.querySelector('.extra-type').value=x.type;item.querySelector('.extra-amount').value=x.amount;item.querySelector('.extra-percent').value=x.percent;}
+    item.innerHTML='<div class="extra-heading"><select class="extra-type" aria-label="Tipo de renda" required><option value="">Selecione</option><option value="aluguel">Aluguel</option><option value="dividendos">Dividendos</option><option value="extra">Renda extra / freela</option><option value="prolabore">Pró-labore</option><option value="outra">Outra renda</option></select><button type="button" class="btn remove-extra" aria-label="Remover esta renda">×</button></div><div class="wizard-fields"><div class="field"><label>Valor líquido (R$)<input class="extra-amount" type="number" min="0" max="1000000000" step="0.01" required inputmode="decimal"></label></div><div class="field"><label>Destinado ao risco (R$)<input class="allocation-value extra-allocation" type="number" min="0" max="0" step="0.01" required inputmode="decimal"></label></div><div class="full"><input class="allocation-range" type="range" min="0" max="0" step="0.01" value="0" aria-label="Renda destinada ao risco em reais"><div class="allocation-limits"><span data-allocation-min></span><span data-allocation-max></span></div></div></div>';
+    item.classList.add('allocation-control');item.dataset.automatic=String(!x);
+    if(x){item.querySelector('.extra-type').value=x.type;item.querySelector('.extra-amount').value=x.amount;item.querySelector('.allocation-value').value=M.extraAllocation(x)/100;}
+    bindAllocation(item);
+    const amount=item.querySelector('.extra-amount');
+    const refresh=()=>refreshAllocation(item,Number(amount.value),amount.value!==''&&amount.validity.valid);
+    amount.addEventListener('input',refresh);refresh();
     item.querySelector('.remove-extra').addEventListener('click',()=>{item.remove();if(!$('extras').children.length)$('temExtras').value='no';optionalFields();});
     $('extras').append(item);optionalFields();applyPrivacy();
   }
   function fillWizard(f){
-    $('obrigacoesForm').reset();$('riscoForm').reset();$('extras').replaceChildren();$('wizardErro').hidden=true;
+    $('obrigacoesForm').reset();$('riscoForm').reset();$('extras').replaceChildren();$('wizardErro').hidden=true;$('rendimentoAlocacao').dataset.automatic=String(!f&&!legacy);
     if(f){
       $('renda').value=f.income;$('contas').value=f.bills;$('reserva').value=f.reserve;
       $('temAplicacao').value=f.capital>0?'yes':'no';$('patrimonio').value=f.capital;$('cdi').value=f.cdi;$('ir').value=f.tax;
+      $('rendimentoRisco').value=f.yieldAllocation??M.monthlyYield(f)/100;
       $('sobraRisco').value=f.allocation;$('saque').value=f.withdrawal;$('temExtras').value=f.extras.length?'yes':'no';f.extras.forEach(addExtra);
     }else if(legacy){
       for(const [id,key] of [['renda','renda'],['contas','contas'],['patrimonio','pat'],['cdi','cdi'],['ir','ir'],['saque','saque']])if(legacy[key]!==undefined)$(id).value=legacy[key];
@@ -74,19 +108,22 @@
       const extras=Array.isArray(legacy.extras)?legacy.extras.slice(0,4):[];$('temExtras').value=extras.length?'yes':'no';
       extras.forEach(x=>addExtra({type:x.tipo,amount:x.valor,percent:x.pct}));
     }
-    optionalFields();refreshSobra();
+    if(legacy&&!f)$('rendimentoRisco').value=M.monthlyYield({capital:Number(legacy.pat)||0,cdi:Number(legacy.cdi)||0,tax:Number(legacy.ir)||15})/100;
+    optionalFields();refreshSobra();refreshYield();
   }
   function openWizard(button){editing=!!state.finance;$('orcamentoDialog').setAttribute('closedby',editing?'closerequest':'none');openedBy=button;fillWizard(state.finance||previous);$('cancelarEdicao').hidden=!editing;$('migracaoAviso').hidden=!!state.finance||!(legacy||previous);$('orcamentoDialog').showModal();stage(1);}
   $('obrigacoesForm').addEventListener('submit',e=>{e.preventDefault();if(hideValues){$('togglePrivacidadeModal').focus();return;}if(!$('obrigacoesForm').reportValidity())return;stepOne={income:inputNumber('renda'),bills:inputNumber('contas'),reserve:$('reserva').value};refreshSobra();stage(2);});
   $('riscoForm').addEventListener('submit',e=>{
     e.preventDefault();if(hideValues){$('togglePrivacidadeModal').focus();return;}if(!$('riscoForm').reportValidity())return;
     const app=$('temAplicacao').value==='yes';
-    const f={...stepOne,capital:app?inputNumber('patrimonio'):0,cdi:app?inputNumber('cdi'):0,tax:app?Number($('ir').value):15,allocation:inputNumber('sobraRisco'),withdrawal:inputNumber('saque'),extras:$('temExtras').value==='yes'?[...$('extras').children].map(item=>({type:item.querySelector('.extra-type').value,amount:Number(item.querySelector('.extra-amount').value),percent:Number(item.querySelector('.extra-percent').value)})):[]};
+    const f={...stepOne,capital:app?inputNumber('patrimonio'):0,cdi:app?inputNumber('cdi'):0,tax:app?Number($('ir').value):15,yieldAllocation:app?inputNumber('rendimentoRisco'):0,allocation:inputNumber('sobraRisco'),withdrawal:inputNumber('saque'),extras:$('temExtras').value==='yes'?[...$('extras').children].map(item=>({type:item.querySelector('.extra-type').value,amount:Number(item.querySelector('.extra-amount').value),allocation:Number(item.querySelector('.extra-allocation').value)})):[]};
     if(!M.validFinance(f)||($('temExtras').value==='yes'&&!f.extras.length)){$('wizardErro').hidden=false;$('wizardErro').textContent='Confira os valores e a parcela da sobra. Todos os campos aplicáveis precisam de resposta válida.';return;}
     state.finance=f;legacy=null;previous=null;persist();render();$('orcamentoDialog').close();$('rever').focus();
   });
   $('renda').addEventListener('input',refreshSobra);$('contas').addEventListener('input',refreshSobra);
-  $('temAplicacao').addEventListener('change',optionalFields);$('temExtras').addEventListener('change',()=>{if($('temExtras').value==='yes'&&!$('extras').children.length)addExtra();optionalFields();});
+  ['patrimonio','cdi','ir'].forEach(id=>$(id).addEventListener('input',refreshYield));
+  $('ir').addEventListener('change',refreshYield);
+  $('temAplicacao').addEventListener('change',()=>{optionalFields();refreshYield();});$('temExtras').addEventListener('change',()=>{if($('temExtras').value==='yes'&&!$('extras').children.length)addExtra();optionalFields();});
   $('adicionarRenda').addEventListener('click',()=>{addExtra();$('extras').lastElementChild?.querySelector('select').focus();});
   $('voltarEtapa').addEventListener('click',()=>stage(1));
   $('cancelarEdicao').addEventListener('click',()=>{$('orcamentoDialog').close();openedBy?.focus();});
@@ -100,14 +137,16 @@
   }}
   function applyPrivacy(){
     for(const id of ['togglePrivacidade','togglePrivacidadeModal']){$(id).textContent=hideValues?'Mostrar valores':'Ocultar valores';$(id).setAttribute('aria-pressed',String(hideValues));}
-    document.querySelectorAll('#renda,#contas,#patrimonio,#sobraRisco,#saque,#stopFinanceiro,.extra-amount,[data-day]').forEach(input=>{
+    document.querySelectorAll('#renda,#contas,#patrimonio,#sobraRisco,#saque,#stopFinanceiro,#rendimentoRisco,.extra-amount,.extra-allocation,[data-day]').forEach(input=>{
       if(!input.parentElement.classList.contains('private-field')){const wrap=document.createElement('span'),mask=document.createElement('span');wrap.className='private-field';mask.className='private-mask';mask.textContent='R$ ••••';input.before(wrap);wrap.append(input,mask);}
       input.style.visibility=hideValues?'hidden':'';input.setAttribute('aria-hidden',String(hideValues));input.tabIndex=hideValues?-1:0;input.parentElement.querySelector('.private-mask').hidden=!hideValues;
     });
+    document.querySelectorAll('.allocation-range').forEach(range=>{range.style.visibility=hideValues?'hidden':'';range.setAttribute('aria-hidden',String(hideValues));range.tabIndex=hideValues?-1:0;});
+    document.querySelectorAll('.allocation-control').forEach(allocationLabels);
     for(const id of ['graficoDias','graficoAnual']){$(id).style.visibility=hideValues?'hidden':'';$(id).setAttribute('aria-hidden',String(hideValues));}
     $('btnCartao').disabled=!model?.canExport||hideValues;$('cartaoAviso').textContent=hideValues?'Mostre os valores para visualizar ou baixar o cartão com seus dados.':'';
   }
-  function togglePrivacy(){hideValues=!hideValues;store(session,'paraquedas-privacidade',hideValues);render();refreshSobra();applyPrivacy();}
+  function togglePrivacy(){hideValues=!hideValues;store(session,'paraquedas-privacidade',hideValues);render();refreshSobra();refreshYield();applyPrivacy();}
   ['togglePrivacidade','togglePrivacidadeModal'].forEach(id=>$(id).addEventListener('click',togglePrivacy));
   function renderAnswers(){
     const f=state.finance,b=model.budget,reserve={none:'Não tenho',partial:'Parcial',full:'Completa'}[f.reserve];
@@ -115,10 +154,10 @@
     const cash=v=>money(M.cents(v));
     list('respostasResumo',[['Renda líquida',cash(f.income)],['Contas do mês',cash(f.bills)],['Reserva de emergência',reserve],['Destinado ao risco',money(b.total)]]);
     list('respostasObrigacoes',[['Renda líquida mensal',cash(f.income)],['Contas do mês',cash(f.bills)],['Sobra após as contas',cash(f.income-f.bills)],['Reserva de emergência',reserve]]);
-    const risk=[['Patrimônio aplicado',cash(f.capital)],['CDI estimado ao ano',f.capital>0?number(f.cdi)+'%':'Não se aplica'],['IR sobre rendimento',f.capital>0?number(f.tax)+'%':'Não se aplica'],['Rendimento mensal estimado líquido',money(b.yield)],['Sobra destinada ao risco',cash(f.allocation)],['Retirada do patrimônio',cash(f.withdrawal)]];
+    const risk=[['Patrimônio aplicado',cash(f.capital)],['CDI estimado ao ano',f.capital>0?number(f.cdi)+'%':'Não se aplica'],['IR sobre rendimento',f.capital>0?number(f.tax)+'%':'Não se aplica'],['Rendimento mensal estimado líquido',money(b.estimatedYield)],['Rendimento destinado ao risco',money(b.yield)],['Sobra destinada ao risco',cash(f.allocation)],['Retirada do patrimônio',cash(f.withdrawal)]];
     const labels={aluguel:'Aluguel',dividendos:'Dividendos',extra:'Renda extra / freela',prolabore:'Pró-labore',outra:'Outra renda'};
     if(!f.extras.length)risk.push(['Outras rendas','Nenhuma informada']);
-    f.extras.forEach((e,i)=>risk.push(['Renda '+(i+1)+' · '+labels[e.type],cash(e.amount)+' · '+number(e.percent)+'% para o risco ('+cash(e.amount*e.percent/100)+')']));
+    f.extras.forEach((e,i)=>risk.push(['Renda '+(i+1)+' · '+labels[e.type],cash(e.amount)+' · '+money(M.extraAllocation(e))+' para o risco']));
     list('respostasRisco',risk);
   }
   function shuffle(){order=Array.from({length:20},(_,i)=>i);for(let i=19;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}}

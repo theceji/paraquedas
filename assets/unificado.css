@@ -18,3 +18,9 @@
 /* Tabelas de consulta, privacidade e comparação de períodos. */
 .contract-surface td:first-child{font-variant-numeric:tabular-nums;text-align:center}.contract-surface tr.zero-contracts{background:var(--red-soft);color:var(--red)}.scenario-period{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 10px}.scenario-period [aria-pressed=true]{background:var(--green-soft);border-color:var(--green);color:var(--ink)}.private-field{display:block;position:relative;min-width:0}.private-mask{position:absolute;inset:0;display:flex;align-items:center;padding:8px 12px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:8px;white-space:nowrap;font-size:14px}.privacy-toggle{font-size:13px;padding:8px 12px}.topbar .privacy-toggle{color:var(--on-navy)}#togglePrivacidadeModal{margin:12px 0 6px}.tool-page .nav{flex-wrap:nowrap}
 @media(max-width:420px){.tool-page .brand span{font-size:11px}.tool-page .brand{gap:5px}.tool-page .brand svg{width:20px}.tool-page .privacy-toggle{font-size:11px;padding:7px}.tool-page .nav{gap:4px}.tool-page .theme-btn{width:34px;height:36px}}
+
+/* Ajustes pontuais dos parâmetros e do fundo escuro. */
+:root[data-theme="dark"] .tool-page{background-color:#070e14}
+.allocation-estimate{display:block;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-weight:700;min-height:46px}
+.onboarding .allocation-range{width:100%;min-width:0;min-height:32px;padding:0;margin-top:10px;accent-color:var(--green);cursor:pointer}
+.allocation-limits{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted)}

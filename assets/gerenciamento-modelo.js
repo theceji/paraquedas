@@ -9,18 +9,21 @@
   const POINT = { WIN:20, WDO:1000 }; // centavos por ponto
   const finite = v => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1e9;
   const cents = v => Math.round(v * 100);
+  const monthlyYield = f => cents(f.capital*(Math.pow(1+f.cdi/100,1/12)-1)*(1-f.tax/100));
+  const extraAllocation = x => x.allocation === undefined ? cents(x.amount*x.percent/100) : cents(x.allocation);
   function validFinance(f) {
     return !!f && ['income','bills','capital','allocation','withdrawal','cdi','tax'].every(k=>finite(f[k])) &&
       ['none','partial','full'].includes(f.reserve) && f.allocation <= Math.max(0, f.income-f.bills)+.00001 &&
-      f.cdi <= 50 && [15,17.5,20,22.5].includes(f.tax) && Array.isArray(f.extras) && f.extras.length <= 4 &&
-      f.extras.every(x=>x && ['aluguel','dividendos','extra','prolabore','outra'].includes(x.type) && finite(x.amount) && finite(x.percent) && x.percent<=100);
+      f.cdi <= 50 && [15,17.5,20,22.5].includes(f.tax) &&
+      (f.yieldAllocation === undefined || (finite(f.yieldAllocation) && f.yieldAllocation <= monthlyYield(f)/100)) && Array.isArray(f.extras) && f.extras.length <= 4 &&
+      f.extras.every(x=>x && ['aluguel','dividendos','extra','prolabore','outra'].includes(x.type) && finite(x.amount) && (x.allocation === undefined ? finite(x.percent) && x.percent<=100 : finite(x.allocation) && x.allocation<=x.amount));
   }
   function budget(f) {
     if (!validFinance(f)) return {total:0,income:0,yield:0,allocation:0,extras:0,withdrawal:0,health:'unknown'};
-    const yieldValue=cents(f.capital*(Math.pow(1+f.cdi/100,1/12)-1)*(1-f.tax/100));
-    const extra=f.extras.reduce((n,x)=>n+cents(x.amount*x.percent/100),0);
+    const estimatedYield=monthlyYield(f),yieldValue=f.yieldAllocation===undefined?estimatedYield:cents(f.yieldAllocation);
+    const extra=f.extras.reduce((n,x)=>n+extraAllocation(x),0);
     const allocation=cents(f.allocation),withdrawal=cents(f.withdrawal);
-    return {total:yieldValue+extra+allocation+withdrawal,yield:yieldValue,extras:extra,allocation,withdrawal,
+    return {total:yieldValue+extra+allocation+withdrawal,yield:yieldValue,estimatedYield,extras:extra,allocation,withdrawal,
       income:yieldValue+extra+allocation,health:f.income<f.bills||(withdrawal>0&&f.reserve==='none')?'red':f.reserve!=='full'||withdrawal>0?'amber':'green'};
   }
   function ledger(results, total, daily, days) {
@@ -68,5 +71,5 @@
     let total=0,closed=false;
     return values.map(v=>{if(closed)return null;total+=v;if(total<=-model.budget.total||model.budget.total+total<model.stop)closed=true;return v/100;});
   }
-  return {DEFAULTS,POINT,cents,validFinance,budget,ledger,calculate,contractTable,simulationContext,scenario};
+  return {DEFAULTS,POINT,cents,monthlyYield,extraAllocation,validFinance,budget,ledger,calculate,contractTable,simulationContext,scenario};
 });
