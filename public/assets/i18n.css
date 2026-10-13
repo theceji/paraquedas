@@ -1,0 +1,11 @@
+/* Seletor explícito: nomes dos idiomas, foco visível e mesma base de estilos. */
+.language-switch { display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
+.language-switch a { color:var(--muted,#a4b6c5); font:600 12px var(--body); padding:8px 9px; min-height:36px; display:inline-flex; align-items:center; border-radius:8px; text-decoration:none; border:1px solid transparent; }
+.language-switch a[aria-current="true"] { color:var(--entry-accent,var(--green)); border-color:currentColor; }
+.language-switch a:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+.landing-nav { flex-wrap:wrap; }
+.landing-nav .language-switch { margin-left:auto; }
+.topbar { flex-wrap:wrap; }
+.wizard-heading { flex-wrap:wrap; }
+.wizard-heading .language-switch { width:100%; }
+@media(max-width:700px) { .landing-nav .language-switch { order:3; width:100%; justify-content:flex-end; margin-top:-4px; } .landing-nav { gap:8px; padding-bottom:8px; } .language-switch a { min-height:40px; padding-inline:8px; } .topbar .language-switch { order:3; width:100%; justify-content:flex-end; } }

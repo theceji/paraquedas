@@ -1,0 +1,239 @@
+/* Interface do gerenciamento unificado. Dados confirmados locais; diário na sessão da aba. */
+(function () {
+  'use strict';
+  const M=window.GerenciamentoModelo,I=window.I18n,t=I.t,$=id=>document.getElementById(id);
+  const KEY='paraquedas-gerenciamento-v2',SESSION='paraquedas-diario-v2',TTL=30*86400000;
+  let hideValues=false,translating=false;
+  const money=c=>hideValues?t('R$ ••••'):(c<0?'−':'')+I.money(Math.abs(c));
+  const number=v=>I.number(v);
+  const clone=v=>JSON.parse(JSON.stringify(v));
+  const month=()=>new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',timeZone:'America/Sao_Paulo'}).format(new Date());
+  function read(storage,key){try{return JSON.parse(storage.getItem(key)||'null');}catch{return null;}}
+  function store(storage,key,value){try{storage.setItem(key,JSON.stringify(value));return true;}catch{return false;}}
+  const state={finance:null,stop:null,results:Array(20).fill(null)};
+  let previous=null,legacy=null,model,mode='scenario',period='monthly',undo=null,order=[],rowsKey='',editing=false,stepOne=null,quote=null;
+  let savedOK=true,sessionOK=true,openedBy=null,quoteRequest=0,quoteError=false;
+  // Acesso aos objetos de armazenamento também pode ser bloqueado pelo navegador.
+  let local,session;try{local=window.localStorage;}catch{}try{session=window.sessionStorage;}catch{}
+  hideValues=!!(session&&read(session,'paraquedas-privacidade'));
+  const rememberedQuote=session&&read(session,'paraquedas-cotacao-v1');
+  if(rememberedQuote?.manual&&Number.isFinite(rememberedQuote.points)&&rememberedQuote.points>0&&rememberedQuote.points<=1e7&&Number.isFinite(Date.parse(rememberedQuote.asOf)))quote={...rememberedQuote,label:''};
+  const saved=local&&read(local,KEY);
+  if(saved?.version===2&&Date.now()-saved.ts<TTL&&saved.ts<=Date.now()+300000){
+    previous=M.validFinance(saved.finance)?saved.finance:null;
+    if(saved.month===month())state.finance=previous;
+    if(Number.isFinite(saved.stop)&&saved.stop>=0)state.stop=saved.stop;
+  }else if(local){
+    const old=read(local,'paraquedas-plano');
+    const pq=old?.pq&&Date.now()-old.pq.ts<TTL?old.pq:null,ger=old?.ger&&Date.now()-old.ger.ts<TTL?old.ger:null;
+    if(pq?.entradas)legacy=pq.entradas;
+    if(ger&&Number.isFinite(ger.risco)&&ger.risco>=0)state.stop=ger.risco;
+    else if(pq&&Number.isFinite(pq.stopEf)&&pq.stopEf>=0)state.stop=pq.stopEf;
+  }
+  const diary=session&&read(session,SESSION);
+  if(diary?.month===month()&&Array.isArray(diary.results))state.results=Array.from({length:20},(_,i)=>typeof diary.results[i]==='number'&&Number.isFinite(diary.results[i])&&Math.abs(diary.results[i])<=1e9?diary.results[i]:null);
+  function persist(){
+    if(state.finance)savedOK=store(local,KEY,{version:2,ts:Date.now(),month:month(),finance:state.finance,stop:state.stop});
+    sessionOK=store(session,SESSION,{month:month(),results:state.results});
+    updateSavedLabel();
+  }
+  function updateSavedLabel(){
+    $('estadoSalvo').textContent=(savedOK?t('Respostas e limites salvos por até 30 dias.'):t('Armazenamento local indisponível; mantenha esta página aberta.'))+' '+(sessionOK?t('Diário preservado nesta aba.'):t('Não foi possível preservar o diário ao recarregar.'));
+  }
+  const inputNumber=id=>$(id).value===''?null:Number($(id).value);
+  function stage(n){$('obrigacoesForm').hidden=n!==1;$('riscoForm').hidden=n!==2;$('etapaRotulo').textContent=t('Etapa {step} de 2',{step:n});$('perguntasTitulo').textContent=n===1?t('Suas obrigações'):t('Quanto vai para o risco?');$('orcamentoDialog').scrollTop=0;$(n===1?'renda':'temAplicacao').focus();applyPrivacy();}
+  function refreshSobra(){
+    const a=inputNumber('renda'),b=inputNumber('contas');
+    $('sobraValor').textContent=a===null||b===null?'—':money(M.cents(a-b));
+    const max=Math.max(0,(a||0)-(b||0));$('sobraRisco').max=String(max);$('sobraMaxima').textContent=t('Até {amount} disponíveis da sobra. Informe zero se não destinar essa parte.',{amount:money(M.cents(max))});
+  }
+  function allocationLabels(group){
+    const range=group.querySelector('.allocation-range');
+    group.querySelector('[data-allocation-min]').textContent=money(0);
+    group.querySelector('[data-allocation-max]').textContent=money(M.cents(Number(range.max)));
+    range.setAttribute('aria-valuetext',money(M.cents(Number(range.value))));
+  }
+  function refreshAllocation(group,max,ready=true){
+    const value=group.querySelector('.allocation-value'),range=group.querySelector('.allocation-range');
+    if(ready){
+      value.max=range.max=String(max);
+      if(group.dataset.automatic==='true')value.value=String(max);
+      else if(value.value!=='' && Number(value.value)>max)value.value=String(max);
+      range.value=value.value||'0';
+    }
+    allocationLabels(group);
+  }
+  function bindAllocation(group){
+    const value=group.querySelector('.allocation-value'),range=group.querySelector('.allocation-range');
+    range.addEventListener('input',()=>{group.dataset.automatic='false';value.value=range.value;allocationLabels(group);});
+    value.addEventListener('input',()=>{group.dataset.automatic='false';range.value=value.value||'0';allocationLabels(group);});
+  }
+  function refreshYield(){
+    const ready=['patrimonio','cdi','ir'].every(id=>$(id).value!=='' && $(id).validity.valid);
+    const total=ready?M.monthlyYield({capital:inputNumber('patrimonio'),cdi:inputNumber('cdi'),tax:inputNumber('ir')}):0;
+    $('rendimentoEstimado').textContent=ready?money(total):'—';
+    refreshAllocation($('rendimentoAlocacao'),total/100,ready);
+  }
+  bindAllocation($('rendimentoAlocacao'));
+  function optionalFields(){
+    const application=$('temAplicacao').value==='yes';$('aplicacaoCampos').hidden=!application;
+    ['patrimonio','cdi','ir','rendimentoRisco','rendimentoRiscoFaixa'].forEach(id=>$(id).disabled=!application);$('cdi').max='50';
+    const extras=$('temExtras').value==='yes';$('extrasCampos').hidden=!extras;
+    $('extras').querySelectorAll('input,select').forEach(e=>e.disabled=!extras);
+    $('adicionarRenda').disabled=$('extras').children.length>=4;
+  }
+  function addExtra(x){
+    if($('extras').children.length>=4)return;
+    const item=document.createElement('div');item.className='extra-source';
+    item.innerHTML='<div class="extra-heading"><select class="extra-type" aria-label="Tipo de renda" required><option value="">Selecione</option><option value="aluguel">Aluguel</option><option value="dividendos">Dividendos</option><option value="extra">Renda extra / freela</option><option value="prolabore">Pró-labore</option><option value="outra">Outra renda</option></select><button type="button" class="btn remove-extra" aria-label="Remover esta renda">×</button></div><div class="wizard-fields"><div class="field"><label>Valor líquido (R$)<input class="extra-amount" type="number" min="0" max="1000000000" step="0.01" required inputmode="decimal"></label></div><div class="field"><label>Destinado ao risco (R$)<input class="allocation-value extra-allocation" type="number" min="0" max="0" step="0.01" required inputmode="decimal"></label></div><div class="full"><input class="allocation-range" type="range" min="0" max="0" step="0.01" value="0" aria-label="Renda destinada ao risco em reais"><div class="allocation-limits"><span data-allocation-min></span><span data-allocation-max></span></div></div></div>';
+    item.classList.add('allocation-control');item.dataset.automatic=String(!x);
+    if(x){item.querySelector('.extra-type').value=x.type;item.querySelector('.extra-amount').value=x.amount;item.querySelector('.allocation-value').value=M.extraAllocation(x)/100;}
+    bindAllocation(item);
+    const amount=item.querySelector('.extra-amount');
+    const refresh=()=>refreshAllocation(item,Number(amount.value),amount.value!==''&&amount.validity.valid);
+    amount.addEventListener('input',refresh);refresh();
+    item.querySelector('.remove-extra').addEventListener('click',()=>{item.remove();if(!$('extras').children.length)$('temExtras').value='no';optionalFields();});
+    $('extras').append(item);I.bind(item);optionalFields();applyPrivacy();
+  }
+  function fillWizard(f){
+    $('obrigacoesForm').reset();$('riscoForm').reset();$('extras').replaceChildren();$('wizardErro').hidden=true;$('rendimentoAlocacao').dataset.automatic=String(!f&&!legacy);
+    if(f){
+      $('renda').value=f.income;$('contas').value=f.bills;$('reserva').value=f.reserve;
+      $('temAplicacao').value=f.capital>0?'yes':'no';$('patrimonio').value=f.capital;$('cdi').value=f.cdi;$('ir').value=f.tax;
+      $('rendimentoRisco').value=f.yieldAllocation??M.monthlyYield(f)/100;
+      $('sobraRisco').value=f.allocation;$('saque').value=f.withdrawal;$('temExtras').value=f.extras.length?'yes':'no';f.extras.forEach(addExtra);
+    }else if(legacy){
+      for(const [id,key] of [['renda','renda'],['contas','contas'],['patrimonio','pat'],['cdi','cdi'],['ir','ir'],['saque','saque']])if(legacy[key]!==undefined)$(id).value=legacy[key];
+      $('reserva').value={nao:'none',parte:'partial',completa:'full'}[legacy.reserva]||'';
+      $('temAplicacao').value=Number(legacy.pat)>0?'yes':'no';
+      const allocation=Math.max(0,Number(legacy.renda)-Number(legacy.contas))*Number(legacy.fracSobra);
+      if(Number.isFinite(allocation))$('sobraRisco').value=(Math.round(allocation*100)/100);
+      const extras=Array.isArray(legacy.extras)?legacy.extras.slice(0,4):[];$('temExtras').value=extras.length?'yes':'no';
+      extras.forEach(x=>addExtra({type:x.tipo,amount:x.valor,percent:x.pct}));
+    }
+    if(legacy&&!f)$('rendimentoRisco').value=M.monthlyYield({capital:Number(legacy.pat)||0,cdi:Number(legacy.cdi)||0,tax:Number(legacy.ir)||15})/100;
+    optionalFields();refreshSobra();refreshYield();
+  }
+  function openWizard(button){editing=!!state.finance;$('orcamentoDialog').setAttribute('closedby',editing?'closerequest':'none');openedBy=button;fillWizard(state.finance||previous);$('cancelarEdicao').hidden=!editing;$('migracaoAviso').hidden=!!state.finance||!(legacy||previous);$('orcamentoDialog').showModal();stage(1);}
+  $('obrigacoesForm').addEventListener('submit',e=>{e.preventDefault();if(hideValues){$('togglePrivacidadeModal').focus();return;}if(!$('obrigacoesForm').reportValidity())return;stepOne={income:inputNumber('renda'),bills:inputNumber('contas'),reserve:$('reserva').value};refreshSobra();stage(2);});
+  $('riscoForm').addEventListener('submit',e=>{
+    e.preventDefault();if(hideValues){$('togglePrivacidadeModal').focus();return;}if(!$('riscoForm').reportValidity())return;
+    const app=$('temAplicacao').value==='yes';
+    const f={...stepOne,capital:app?inputNumber('patrimonio'):0,cdi:app?inputNumber('cdi'):0,tax:app?Number($('ir').value):15,yieldAllocation:app?inputNumber('rendimentoRisco'):0,allocation:inputNumber('sobraRisco'),withdrawal:inputNumber('saque'),extras:$('temExtras').value==='yes'?[...$('extras').children].map(item=>({type:item.querySelector('.extra-type').value,amount:Number(item.querySelector('.extra-amount').value),allocation:Number(item.querySelector('.extra-allocation').value)})):[]};
+    if(!M.validFinance(f)||($('temExtras').value==='yes'&&!f.extras.length)){$('wizardErro').hidden=false;$('wizardErro').textContent=t('Confira os valores e a parcela da sobra. Todos os campos aplicáveis precisam de resposta válida.');return;}
+    state.finance=f;legacy=null;previous=null;persist();render();$('orcamentoDialog').close();$('rever').focus();
+  });
+  $('renda').addEventListener('input',refreshSobra);$('contas').addEventListener('input',refreshSobra);
+  ['patrimonio','cdi','ir'].forEach(id=>$(id).addEventListener('input',refreshYield));
+  $('ir').addEventListener('change',refreshYield);
+  $('temAplicacao').addEventListener('change',()=>{optionalFields();refreshYield();});$('temExtras').addEventListener('change',()=>{if($('temExtras').value==='yes'&&!$('extras').children.length)addExtra();optionalFields();});
+  $('adicionarRenda').addEventListener('click',()=>{addExtra();$('extras').lastElementChild?.querySelector('select').focus();});
+  $('voltarEtapa').addEventListener('click',()=>stage(1));
+  $('cancelarEdicao').addEventListener('click',()=>{$('orcamentoDialog').close();openedBy?.focus();});
+  $('orcamentoDialog').addEventListener('keydown',e=>{if(e.key==='Escape'&&!editing)e.preventDefault();});
+  $('orcamentoDialog').addEventListener('cancel',e=>{if(!editing){e.preventDefault();$('perguntasDescricao').textContent=t('Conclua as duas etapas ou use Voltar ao início. Não há opção de pular.');}else openedBy?.focus();});
+  $('comecar').addEventListener('click',e=>openWizard(e.currentTarget));$('rever').addEventListener('click',e=>openWizard(e.currentTarget));
+
+  function renderTables(){for(const asset of ['WIN','WDO']){
+    const body=$(asset==='WIN'?'tWin':'tWdo');body.replaceChildren();
+    for(const row of model.tables[asset]){const tr=document.createElement('tr');tr.classList.toggle('zero-contracts',row.n===0);for(const value of [number(row.p),hideValues?'••':String(row.n),money(row.loss)]){const td=document.createElement('td');td.textContent=value;tr.append(td);}body.append(tr);}
+  }}
+  function applyPrivacy(){
+    for(const id of ['togglePrivacidade','togglePrivacidadeModal']){$(id).textContent=hideValues?t('Mostrar valores'):t('Ocultar valores');$(id).setAttribute('aria-pressed',String(hideValues));}
+    document.querySelectorAll('#renda,#contas,#patrimonio,#sobraRisco,#saque,#stopFinanceiro,#rendimentoRisco,.extra-amount,.extra-allocation,[data-day]').forEach(input=>{
+      if(!input.parentElement.classList.contains('private-field')){const wrap=document.createElement('span'),mask=document.createElement('span');wrap.className='private-field';mask.className='private-mask';mask.textContent=t('R$ ••••');input.before(wrap);wrap.append(input,mask);}
+      input.style.visibility=hideValues?'hidden':'';input.setAttribute('aria-hidden',String(hideValues));input.tabIndex=hideValues?-1:0;input.parentElement.querySelector('.private-mask').hidden=!hideValues;input.parentElement.querySelector('.private-mask').textContent=t('R$ ••••');
+    });
+    document.querySelectorAll('.allocation-range').forEach(range=>{range.style.visibility=hideValues?'hidden':'';range.setAttribute('aria-hidden',String(hideValues));range.tabIndex=hideValues?-1:0;});
+    document.querySelectorAll('.allocation-control').forEach(allocationLabels);
+    for(const id of ['graficoDias','graficoAnual']){$(id).style.visibility=hideValues?'hidden':'';$(id).setAttribute('aria-hidden',String(hideValues));}
+    $('btnCartao').disabled=!model?.canExport||hideValues;$('cartaoAviso').textContent=hideValues?t('Mostre os valores para visualizar ou baixar o cartão com seus dados.'):'';
+  }
+  function togglePrivacy(){hideValues=!hideValues;store(session,'paraquedas-privacidade',hideValues);render();refreshSobra();refreshYield();applyPrivacy();}
+  ['togglePrivacidade','togglePrivacidadeModal'].forEach(id=>$(id).addEventListener('click',togglePrivacy));
+  function renderAnswers(){
+    const f=state.finance,b=model.budget,reserve={none:t('Não tenho'),partial:t('Parcial'),full:t('Completa')}[f.reserve];
+    function list(id,items){const dl=$(id);dl.replaceChildren();for(const [label,value]of items){const group=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;group.append(dt,dd);dl.append(group);}}
+    const cash=v=>money(M.cents(v));
+    list('respostasResumo',[[t('Renda líquida'),cash(f.income)],[t('Contas do mês'),cash(f.bills)],[t('Reserva de emergência'),reserve],[t('Destinado ao risco'),money(b.total)]]);
+    list('respostasObrigacoes',[[t('Renda líquida mensal'),cash(f.income)],[t('Contas do mês'),cash(f.bills)],[t('Sobra após as contas'),cash(f.income-f.bills)],[t('Reserva de emergência'),reserve]]);
+    const risk=[[t('Patrimônio aplicado'),cash(f.capital)],[t('CDI estimado ao ano'),f.capital>0?number(f.cdi)+'%':t('Não se aplica')],[t('IR sobre rendimento'),f.capital>0?number(f.tax)+'%':t('Não se aplica')],[t('Rendimento mensal estimado líquido'),money(b.estimatedYield)],[t('Rendimento destinado ao risco'),money(b.yield)],[t('Sobra destinada ao risco'),cash(f.allocation)],[t('Retirada do patrimônio'),cash(f.withdrawal)]];
+    const labels={aluguel:t('Aluguel'),dividendos:t('Dividendos'),extra:t('Renda extra / freela'),prolabore:t('Pró-labore'),outra:t('Outra renda')};
+    if(!f.extras.length)risk.push([t('Outras rendas'),t('Nenhuma informada')]);
+    f.extras.forEach((e,i)=>risk.push([t('Renda {index} · {type}',{index:i+1,type:labels[e.type]}),cash(e.amount)+' · '+money(M.extraAllocation(e))+t(' para o risco')]));
+    list('respostasRisco',risk);
+  }
+  function shuffle(){order=Array.from({length:20},(_,i)=>i);for(let i=19;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}}
+  function drawChart(id,values,labels){const W=600,H=200,pl=50,pb=25,pt=12;const maxP=Math.max(1,...values),maxN=Math.max(1,...values.map(v=>-v)),height=H-pb-pt,y0=pt+height*maxP/(maxP+maxN),scale=height/(maxP+maxN),step=(W-pl-12)/Math.max(1,values.length);let svg='<line x1="'+pl+'" x2="590" y1="'+y0+'" y2="'+y0+'" stroke="var(--line)"/>';values.forEach((v,i)=>{const x=pl+(i+.5)*step,h=Math.abs(v)*scale;svg+='<rect x="'+(x-step*.3)+'" y="'+(v>=0?y0-h:y0)+'" width="'+step*.6+'" height="'+h+'" fill="'+(v>=0?'var(--green)':'var(--red)')+'" rx="3"/><text x="'+x+'" y="194" fill="var(--muted)" text-anchor="middle" font-size="11">'+labels[i]+'</text>';});$(id).innerHTML=svg;}
+  function renderDiary(){
+    const simulated=mode==='scenario',context=M.simulationContext(model,simulated?period:'operator'),days=context.days;
+    const values=simulated?M.scenario(context,Number($('acerto').value),$('payoff').value,order):state.results;
+    const summary=simulated?M.ledger(values,context.budget.total,context.stop,days):model.actual;
+    $('periodoMensal').setAttribute('aria-pressed',String(period==='monthly'&&simulated));$('periodoOperador').setAttribute('aria-pressed',String(period==='operator'||!simulated));
+    $('cenarioBase').textContent=simulated&&period==='monthly'?t('Cenário mensal hipotético: orçamento de {budget} para 20 stops de {stop}. ',{budget:money(context.budget.total),stop:money(context.stop)})+(context.example?t('Stop ilustrativo enquanto você não informa o seu. '):'')+t('Não altera seu orçamento ou diário.'):t('Seu cenário: {days}, orçamento de {budget} e stop de {stop}.',{days:I.days(days),budget:money(model.budget.total),stop:money(model.stop)});
+    $('acertoField').hidden=!simulated;$('payoffField').hidden=!simulated;$('sortear').hidden=!simulated;$('limpar').hidden=simulated;$('desfazer').hidden=simulated||!undo;
+    const key=days+'|'+mode+'|'+period;
+    if(rowsKey!==key){$('tDias').innerHTML=Array.from({length:days},(_,i)=>'<tr id="dayrow'+i+'"><td>'+(i+1)+'</td><td>'+(simulated?'<span id="d'+i+'"></span>':'<input id="d'+i+'" data-day="'+i+'" type="number" step="0.01" min="-1000000000" max="1000000000" inputmode="decimal" aria-label="Resultado do dia '+(i+1)+' em reais">')+'</td><td id="sit'+i+'"></td><td id="saldo'+i+'"></td></tr>').join('');rowsKey=key;}
+    summary.rows.slice(0,days).forEach((r,i)=>{if(!simulated)$('d'+i).setAttribute('aria-label',t('Resultado do dia {day} em reais',{day:i+1}));const value=values[i];if(simulated)$('d'+i).textContent=r.value===null?'—':money(r.value);else if(!translating&&document.activeElement!==$('d'+i))$('d'+i).value=typeof value==='number'?value:'';
+      $('sit'+i).textContent=r.value===null?'—':(r.value>0?t('Gain'):r.value<0?t('Loss'):t('Zero'))+(r.after?t(' · após limite'):r.hit?t(' · limite'):r.dailyViolation?t(' · excedeu stop'):'');
+      $('dayrow'+i).classList.toggle('violation',!!(r.hit||r.after||r.dailyViolation));$('saldo'+i).textContent=r.value===null?'—':money(r.balance);
+    });
+    $('diasBadge').textContent=I.days(days);$('semDias').hidden=days>0;
+    $('resultadoRotulo').textContent=simulated?t('Resultado simulado'):t('Resultado registrado');$('resultadoTotal').textContent=money(summary.sum);$('saldoAtual').textContent=money(context.budget.total+summary.sum);$('acertosResumo').textContent=summary.gains+' / '+summary.losses;
+    $('usoOrcamento').textContent=hideValues?'••':context.budget.total>0?number(summary.highestLoss/context.budget.total*100)+'%':summary.highestLoss>0?t('Sem orçamento'):'—';
+    const violations=summary.rows.filter(r=>r.dailyViolation).length;
+    $('diarioAlerta').textContent=summary.first!==null?t('Limite do orçamento atingido no dia {day}. ',{day:summary.first})+(simulated?t('O cenário encerra nesse limite.'):t('Ganhos posteriores não apagam a ocorrência. Registros fora dos dias previstos também entram no saldo.')):violations?I.plural('violations',violations):simulated?t('Cenário hipotético. Seus resultados próprios estão preservados.'):t('Registre uma operação por dia. O limite mensal é o orçamento confirmado.');
+    $('diarioAlerta').classList.toggle('error',summary.first!==null||violations>0);
+    const extra=state.results.map((v,i)=>({v,i})).filter(x=>x.i>=model.days&&x.v!==null);$('foraPeriodo').hidden=simulated||!extra.length;$('foraLista').replaceChildren();extra.forEach(x=>{const li=document.createElement('li');li.textContent=t('Dia {day}: {value}',{day:x.i+1,value:money(M.cents(x.v))});$('foraLista').append(li);});
+    drawChart('graficoDias',summary.rows.slice(0,days).map(r=>(r.value||0)/100),summary.rows.slice(0,days).map(r=>r.day));applyPrivacy();
+  }
+  function renderAnnual(){const sequence=[.4,-.6,.8,-.3,.5,-1,.6,.5,-.4,.9,-.3,.7],part=Number($('reinvestir').value);let extra=0,total=0,kept=0;const results=sequence.map(rate=>{const base=model.budget.total,v=Math.round((base+extra)*rate);total+=v;if(v>0){const back=Math.round(v*part);extra+=back;kept+=v-back;}else extra=Math.max(0,extra-Math.max(0,-v-base));return v/100;});drawChart('graficoAnual',results,I.months());$('resumoAnual').textContent=t('Resultado hipotético: {result} · guardado fora do risco: {saved}.',{result:money(total),saved:money(kept)});}
+  function renderQuote(){
+    $('cotacaoValor').textContent=quote?number(quote.points)+' pts':'—';
+    $('cotacaoInfo').textContent=quote?(quote.manual?t('Referência manual de índice futuro · informada em {date}.',{date:I.date(quote.asOf,true)}):window.CotacaoIndice.describe(quote).label)+(quoteError?t(' Atualização indisponível; mantida a referência acima.'):''):t('Referência indisponível. Informe um valor manual ou tente atualizar. Contratos pelo stop continuam independentes da cotação.');
+    const noc=quote?quote.points*20:null;$('nocional').textContent=noc===null?'—':money(noc);$('alavUm').textContent=hideValues?'••':noc!==null&&model?.budget.total>0?number(noc/model.budget.total)+'×':'—';
+  }
+  function render(){
+    model=M.calculate(state);$('painel').hidden=!model.confirmed;$('inicioObrigatorio').hidden=model.confirmed;
+    if(!model.confirmed){applyPrivacy();return;}
+    renderAnswers();
+    const b=model.budget;$('orcamentoValor').textContent=money(b.total);
+    $('saude').className='health '+b.health;$('saude').textContent=b.health==='red'?t('Atenção: suas contas não fecham ou há retirada sem reserva. Reveja as respostas antes de arriscar.'):b.health==='amber'?t('Atenção: reserva incompleta ou retirada do patrimônio.'):t('Obrigações e reserva cobertas conforme as respostas informadas.');
+    $('composicao').replaceChildren();for(const [label,v]of [[t('Da sobra'),b.allocation],[t('Aplicação'),b.yield],[t('Outras rendas'),b.extras],[t('Do patrimônio'),b.withdrawal]]){const li=document.createElement('li');li.textContent=label+': '+money(v);$('composicao').append(li);}
+    if(!translating&&document.activeElement!==$('stopFinanceiro'))$('stopFinanceiro').value=state.stop??'';
+    $('alvo2').textContent=money(model.target2);$('alvo3').textContent=money(model.target3);$('alvo2pts').textContent=t('2 × stop financeiro');$('alvo3pts').textContent=t('3 × stop financeiro');
+    $('diasValor').textContent=I.days(model.days);$('compatibilidade').textContent=t('status.'+model.status,model.messageParams);$('compatibilidade').classList.toggle('error',!model.canExport);
+    renderTables();
+    $('btnCartao').disabled=!model.canExport;$('piorCaso').textContent=t('O limite do período é {total}. Desta quantia, {withdrawal} vieram do patrimônio e {income} da renda destinada ao risco. A retirada pode reduzir o que já estava guardado. Não há garantia de preservação em operações reais.',{total:money(b.total),withdrawal:money(b.withdrawal),income:money(b.income)});
+    renderDiary();renderAnnual();renderQuote();applyPrivacy();
+  }
+  $('stopFinanceiro').addEventListener('input',()=>{state.stop=inputNumber('stopFinanceiro');persist();render();});
+  $('tDias').addEventListener('input',e=>{if(!e.target.matches('[data-day]'))return;if(!e.target.validity.valid)return;state.results[Number(e.target.dataset.day)]=e.target.value===''?null:Number(e.target.value);persist();render();});
+  $('modo').addEventListener('change',()=>{mode=$('modo').value;if(mode==='manual')period='operator';renderDiary();});
+  $('periodoMensal').addEventListener('click',()=>{period='monthly';mode='scenario';$('modo').value=mode;renderDiary();});
+  $('periodoOperador').addEventListener('click',()=>{period='operator';mode='scenario';$('modo').value=mode;renderDiary();});['acerto','payoff'].forEach(id=>$(id).addEventListener('change',renderDiary));
+  $('sortear').addEventListener('click',()=>{shuffle();renderDiary();});
+  $('limpar').addEventListener('click',()=>{if(!state.results.some(v=>v!==null))return;undo=[...state.results];state.results.fill(null);persist();render();});
+  $('desfazer').addEventListener('click',()=>{if(undo){state.results=undo;undo=null;persist();render();}});
+  $('reinvestir').addEventListener('change',renderAnnual);
+  async function loadQuote(){const request=++quoteRequest;$('atualizarCotacao').disabled=true;try{const next=await window.CotacaoIndice.load();if(request===quoteRequest){quote=next;quoteError=false;store(session,'paraquedas-cotacao-v1',null);}}catch{if(request===quoteRequest)quoteError=true;}if(request===quoteRequest){renderQuote();$('atualizarCotacao').disabled=false;}}
+  $('atualizarCotacao').addEventListener('click',loadQuote);
+  $('usarCotacao').addEventListener('click',()=>{const e=$('cotacaoManual');if(!e.value||!e.reportValidity())return;quoteRequest++;quoteError=false;$('atualizarCotacao').disabled=false;quote={points:Number(e.value),manual:true,asOf:new Date().toISOString(),label:''};store(session,'paraquedas-cotacao-v1',quote);renderQuote();});
+  shuffle();render();persist();
+  document.addEventListener('languagechange',()=>{
+    // Render labels only: no reset, shuffle, persistence or re-creation of draft forms.
+    translating=true;
+    try{
+      render();refreshSobra();applyPrivacy();
+      const ready=['patrimonio','cdi','ir'].every(id=>$(id).value!==''&&$(id).validity.valid);
+      $('rendimentoEstimado').textContent=ready?money(M.monthlyYield({capital:inputNumber('patrimonio'),cdi:inputNumber('cdi'),tax:inputNumber('ir')})):'—';
+    }finally{translating=false;}
+    $('etapaRotulo').textContent=t('Etapa {step} de 2',{step:$('obrigacoesForm').hidden?2:1});
+    $('perguntasTitulo').textContent=$('obrigacoesForm').hidden?t('Quanto vai para o risco?'):t('Suas obrigações');
+    updateSavedLabel();
+  });
+  window.GerenciamentoApp={snapshot:()=>clone(M.calculate(state))};
+  window.CartaoGerenciamento.ligar('btnCartao',()=>({...M.calculate(state),canExport:model.canExport&&!hideValues}));
+  if(!state.finance)openWizard($('comecar'));
+  if(!quote?.manual)loadQuote();
+})();

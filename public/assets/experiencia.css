@@ -1,0 +1,63 @@
+/* Cabeçalhos das ferramentas, regras e cartão de gerenciamento. */
+.tool-page .topbar-in { max-width: 1180px; }
+.tool-header { width: min(1180px,100%); margin: 0 auto 26px; padding-top: 30px; }
+.tool-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding-bottom: 24px; }
+.tool-heading h1 { font-size: clamp(30px,4vw,46px); line-height: 1.1; margin: 9px 0 10px; }
+.tool-heading p { color: var(--muted); max-width: 65ch; }
+.back-home { color: var(--muted); white-space: nowrap; text-decoration: none; padding: 10px 0; font-size: 14px; }
+.tool-tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--line); }
+.tool-tabs a { text-decoration: none; font-weight: 700; color: var(--muted); padding: 14px 4px; border-bottom: 3px solid transparent; }
+.tool-tabs a[aria-current] { color: var(--green); border-color: var(--green); }
+.tool-tabs span { font-size: 11px; margin-right: 6px; opacity: .8; }
+.tool-footer { max-width: 1180px; margin: 40px auto 0; padding: 22px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
+.tool-footer a { color: var(--green); }
+.bridge-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.bridge-panel > div { display: flex; flex-direction: column; gap: 8px; }
+.bridge-panel h2, .bridge-panel h3 { font-size: 21px; }
+.bridge-panel p { color: var(--muted); font-size: 14px; max-width: 70ch; }
+.bridge-panel .btn { flex-shrink: 0; text-align: center; text-decoration: none; }
+.cartao-acao a { text-decoration: none; text-align: center; }
+.rule-hl { min-height: 142px; padding: 20px; border: 1px solid var(--line); border-left-width: 3px; background: var(--surface); color: var(--ink); gap: 10px; }
+.rule-hl strong { position: relative; z-index: 1; font-size: 18px; line-height: 1.2; max-width: 20ch; }
+.rule-hl span { position: relative; z-index: 1; font-size: 14px; line-height: 1.45; color: var(--muted); max-width: 32ch; }
+.rule-hl svg { position: absolute; width: 100px; height: 100px; right: -17px; bottom: -15px; opacity: .065; transform: rotate(-14deg); pointer-events: none; }
+.rule-hl.r-green { border-left-color: #438b75; }
+.rule-hl.r-blue { border-left-color: #5b85a8; }
+.rule-hl.r-red { border-left-color: #b56a63; }
+.rule-hl.r-amber { border-left-color: #a88d55; }
+.rule-hl:nth-child(even) svg { right: -8px; bottom: -25px; transform: rotate(12deg); }
+.cartao-dialog { width: min(980px,calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 24px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 20px 100px #0007; overflow-y: auto; }
+.cartao-dialog::backdrop { background: rgba(4,12,20,.76); backdrop-filter: blur(3px); }
+body:has(.cartao-dialog[open]) { overflow: hidden; }
+.cartao-dialog-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; margin-bottom: 12px; }
+.cartao-dialog-head h2 { font-size: clamp(20px,3vw,28px); line-height: 1.15; margin-top: 5px; }
+.modal-close { flex-shrink: 0; }
+#cartaoDescricao { color: var(--muted); font-size: 14px; }
+.cartao-dialog-body { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(220px,.8fr); gap: 24px; margin-top: 20px; align-items: start; }
+.cartao-preview { background: var(--bg); border: 1px solid var(--line); padding: 10px; border-radius: 12px; min-width: 0; }
+.cartao-preview img { width: 100%; display: block; height: auto; }
+.cartao-download { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 0; }
+#cartaoResumo { display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
+#cartaoResumo p { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+#baixarCartao { text-decoration: none; text-align: center; }
+#cartaoCarregando { padding: 24px 10px; }
+@media (max-width: 700px) {
+  .tool-header { padding-top: 22px; }
+  .tool-heading { gap: 10px; }
+  .tool-heading h1 { font-size: 30px; }
+  .tool-heading p { font-size: 14px; }
+  .tool-tabs { gap: 16px; }
+  .tool-tabs a { font-size: 14px; }
+  .tool-tabs span { display: none; }
+  .bridge-panel { flex-direction: column; align-items: stretch; gap: 16px; padding: 18px; }
+  .rules-hl { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+  .rule-hl { min-height: 150px; padding: 15px 12px; }
+  .rule-hl strong { font-size: 16px; }
+  .rule-hl span { font-size: 12px; }
+  .rule-hl svg { width: 80px; height: 80px; }
+  .cartao-dialog { width: calc(100% - 16px); max-height: calc(100dvh - 16px); padding: 16px; border-radius: 16px; }
+  .cartao-dialog-head { gap: 8px; }
+  .modal-close { font-size: 12px; padding: 8px 10px; }
+  .cartao-dialog-body { grid-template-columns: 1fr; gap: 18px; }
+  .cartao-download { position: static; }
+}
