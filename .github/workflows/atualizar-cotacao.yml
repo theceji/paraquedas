@@ -1,0 +1,59 @@
+name: CotaÃ§Ã£o e publicaÃ§Ã£o do site
+on:
+  workflow_dispatch:
+  schedule:
+    # 11:17, 14:17 e 17:17 em SÃ£o Paulo, segunda a sexta. Pode haver atrasos.
+    - cron: '17 14,17,20 * * 1-5'
+  push:
+    branches: [main, master]
+    paths: ['src/**', 'docs/CHANGELOG.md', 'public/**', 'scripts/**', 'tests/**', '.github/workflows/atualizar-cotacao.yml']
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Gerar e validar os trÃªs idiomas
+        run: node scripts/build-site.mjs
+      - name: Validar os cÃ¡lculos
+        run: node --test tests/*.test.cjs tests/*.test.mjs
+      - name: Atualizar referÃªncia (mantÃ©m o arquivo anterior se indisponÃ­vel)
+        continue-on-error: true
+        env:
+          BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
+        run: node scripts/atualizar-cotacao.mjs
+      - name: Guardar somente a cotaÃ§Ã£o
+        run: |
+          if ! git diff --quiet -- public/cotacao.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add public/cotacao.json
+            git commit -m 'Atualiza referÃªncia de mercado'
+            git push
+          fi
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar somente public/
+        id: deployment
+        uses: actions/deploy-pages@v4
