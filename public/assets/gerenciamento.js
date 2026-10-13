@@ -139,7 +139,7 @@
     for(const row of model.tables[asset]){const tr=document.createElement('tr');tr.classList.toggle('zero-contracts',row.n===0);for(const value of [number(row.p),hideValues?'••':String(row.n),money(row.loss)]){const td=document.createElement('td');td.textContent=value;tr.append(td);}body.append(tr);}
   }}
   function applyPrivacy(){
-    for(const id of ['togglePrivacidade','togglePrivacidadeModal']){$(id).textContent=hideValues?t('Mostrar valores'):t('Ocultar valores');$(id).setAttribute('aria-pressed',String(hideValues));}
+    for(const id of ['togglePrivacidade','togglePrivacidadeModal']){const button=$(id),label=hideValues?t('Mostrar valores'):t('Ocultar valores');button.setAttribute('aria-label',label);button.title=label;button.setAttribute('aria-pressed',String(hideValues));}
     document.querySelectorAll('#renda,#contas,#patrimonio,#sobraRisco,#saque,#stopFinanceiro,#rendimentoRisco,.extra-amount,.extra-allocation,[data-day]').forEach(input=>{
       if(!input.parentElement.classList.contains('private-field')){const wrap=document.createElement('span'),mask=document.createElement('span');wrap.className='private-field';mask.className='private-mask';mask.textContent=t('R$ ••••');input.before(wrap);wrap.append(input,mask);}
       input.style.visibility=hideValues?'hidden':'';input.setAttribute('aria-hidden',String(hideValues));input.tabIndex=hideValues?-1:0;input.parentElement.querySelector('.private-mask').hidden=!hideValues;input.parentElement.querySelector('.private-mask').textContent=t('R$ ••••');

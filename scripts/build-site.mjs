@@ -32,7 +32,7 @@ export function render(html,lang){
    return token;
   }
   const key=decode(token.trim());if(!(key in dict)){
-   if(/[A-Za-zÀ-ÿ]/.test(key)&&!['Português','English','Español'].includes(key)&&!['script','style'].includes(textTag))throw Error('Texto sem catálogo: '+key);
+   if(/[A-Za-zÀ-ÿ]/.test(key)&&!['Português','English','Español','BR','EN','ES'].includes(key)&&!['script','style'].includes(textTag))throw Error('Texto sem catálogo: '+key);
    return token;
   }
   const value=token.replace(token.trim(),escape(dict[key]));

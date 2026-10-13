@@ -9,12 +9,14 @@
   const continuationPath = document.getElementById('continuationPath'), mask = document.getElementById('continuationMask');
   const indicator = scene.querySelector('.stop-indicator'), figure = scene.closest('figure');
   const capitalFade = document.getElementById('capitalFade'), continuationFade = document.getElementById('continuationFade');
-  const fallDuration = 4200, continuationDuration = 2400;
+  const fallDuration = 7200, continuationDuration = 2400;
   let frame = 0, layoutFrame = 0, length = 0, progress = 0, after = 0;
   function draw(nextProgress, nextAfter) {
     progress = nextProgress; after = nextAfter;
     const point = line.getPointAtLength(length * progress);
-    money.setAttribute('transform', 'translate(' + point.x + ' ' + point.y + ')');
+    // Oscilação leve em torno do velame; zera no início e no pouso.
+    const sway = progress <= 0 || progress >= 1 ? 0 : 5 * Math.sin(progress * Math.PI) * Math.sin(progress * fallDuration / 2400 * Math.PI * 2);
+    money.setAttribute('transform', 'translate(' + point.x + ' ' + point.y + ') rotate(' + sway + ' 0 -95)');
     line.style.strokeDasharray = '1'; line.style.strokeDashoffset = String(1 - progress);
     continuation.style.strokeDasharray = '1'; continuation.style.strokeDashoffset = String(1 - after);
     line.style.opacity = String(Math.min(1, progress * fallDuration / 450));

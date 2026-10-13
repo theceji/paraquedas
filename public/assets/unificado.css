@@ -24,3 +24,10 @@
 .allocation-estimate{display:block;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-weight:700;min-height:46px}
 .onboarding .allocation-range{width:100%;min-width:0;min-height:32px;padding:0;margin-top:10px;accent-color:var(--green);cursor:pointer}
 .allocation-limits{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted)}
+
+/* Ícone persistente; o nome acessível e o estado acompanham a privacidade. */
+.privacy-toggle,.tool-page .privacy-toggle{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:44px;height:44px;padding:0}
+.privacy-toggle svg{display:block;pointer-events:none}
+.privacy-eye-slash{display:none}
+.privacy-toggle[aria-pressed="true"] .privacy-eye-slash{display:block}
+.privacy-toggle:focus-visible{outline:2px solid var(--green);outline-offset:3px}

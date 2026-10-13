@@ -1,6 +1,13 @@
-/* Seletor explícito: nomes dos idiomas, foco visível e mesma base de estilos. */
+/* Siglas visuais com nomes acessíveis; meia bandeira decorativa ao fundo. */
 .language-switch { display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
-.language-switch a { color:var(--muted,#a4b6c5); font:600 12px var(--body); padding:8px 9px; min-height:36px; display:inline-flex; align-items:center; border-radius:8px; text-decoration:none; border:1px solid transparent; }
+.language-switch a { position:relative; isolation:isolate; overflow:hidden; justify-content:center; width:44px; min-height:44px; box-sizing:border-box; color:var(--entry-ink,var(--ink)); font:800 12px var(--body); letter-spacing:.04em; padding:8px; display:inline-flex; align-items:center; border-radius:8px; text-decoration:none; border:1px solid var(--entry-line,var(--line)); background:var(--entry-bg,var(--card)); }
+.language-switch a::before { content:""; position:absolute; z-index:-1; pointer-events:none; inset:0 0 0 50%; background-image:var(--language-flag); background-size:66px 44px; background-position:right center; opacity:.3; mask-image:linear-gradient(to right,transparent,#000 40%); }
+.language-switch a[data-locale="pt-BR"] { --language-flag:url("flags/br.svg"); }
+.language-switch a[data-locale="en"] { --language-flag:url("flags/us.svg"); }
+.language-switch a[data-locale="en"]::before { background-position:left center; }
+.language-switch a[data-locale="es"] { --language-flag:url("flags/es.svg"); }
+.language-switch a:hover { border-color:var(--entry-accent,var(--green)); }
+.language-switch a:hover::before { opacity:.45; }
 .language-switch a[aria-current="true"] { color:var(--entry-accent,var(--green)); border-color:currentColor; }
 .language-switch a:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
 .landing-nav { flex-wrap:wrap; }
@@ -8,4 +15,4 @@
 .topbar { flex-wrap:wrap; }
 .wizard-heading { flex-wrap:wrap; }
 .wizard-heading .language-switch { width:100%; }
-@media(max-width:700px) { .landing-nav .language-switch { order:3; width:100%; justify-content:flex-end; margin-top:-4px; } .landing-nav { gap:8px; padding-bottom:8px; } .language-switch a { min-height:40px; padding-inline:8px; } .topbar .language-switch { order:3; width:100%; justify-content:flex-end; } }
+@media(max-width:700px) { .landing-nav .language-switch { order:3; width:100%; justify-content:flex-end; margin-top:-4px; } .landing-nav { gap:8px; padding-bottom:8px; } .language-switch a { min-height:44px; padding-inline:8px; } .topbar .language-switch { order:3; width:100%; justify-content:flex-end; } }
