@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "points": 205224.58,
+  "points": 204468.03,
   "kind": "spot",
   "symbol": "^BVSP",
   "source": "Yahoo Finance",
-  "asOf": "2026-10-16T14:34:30.000Z",
-  "fetchedAt": "2026-10-16T14:49:47.949Z"
+  "asOf": "2026-10-16T17:30:00.000Z",
+  "fetchedAt": "2026-10-16T17:45:22.843Z"
 }
